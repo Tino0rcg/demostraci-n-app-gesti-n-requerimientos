@@ -61,10 +61,7 @@ export function UserNav({ user }: UserNavProps) {
             <User className="h-4 w-4" />
             <span>Perfil de Usuario</span>
           </DropdownMenuItem>
-          <DropdownMenuItem className="gap-2 focus:bg-primary/20 focus:text-primary cursor-pointer py-2.5">
-            <Settings className="h-4 w-4" />
-            <span>Configuración</span>
-          </DropdownMenuItem>
+
         </DropdownMenuGroup>
         <DropdownMenuSeparator className="bg-white/5" />
         <div className="p-1">

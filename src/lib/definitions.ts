@@ -6,6 +6,7 @@ export type User = {
     role: 'Usuario' | 'Técnico' | 'Administrador Full' | 'Administrador Cliente';
     empresa: string;
     password?: string;
+    phone?: string;
   };
   
 export type TicketStatus = 'Ingresado' | 'En proceso' | 'Espera de aprobación' | 'Terminado';
@@ -14,6 +15,7 @@ export type TicketStatus = 'Ingresado' | 'En proceso' | 'Espera de aprobación' 
   
   export type Ticket = {
     id: string;
+    codigo?: string;
     subject: string;
     description: string;
     status: TicketStatus;

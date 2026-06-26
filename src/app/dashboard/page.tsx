@@ -41,7 +41,7 @@ function TicketCard({ ticket, submitter, onClick }: { ticket: Ticket, submitter?
                             title={getSlaStatus(ticket).label} 
                             className={`h-2.5 w-2.5 rounded-full ${getSlaStatus(ticket).color} shadow-[0_0_8px_rgba(255,255,255,0.2)]`} 
                         />
-                        <span className="text-xs text-muted-foreground font-mono">#{ticket.id.split('-')[1]}</span>
+                        <span className="text-xs text-muted-foreground font-mono font-bold text-primary">#{ticket.codigo || ticket.id.split('-')[0].toUpperCase()}</span>
                     </div>
                 </div>
                 <CardTitle className="text-sm font-bold leading-tight group-hover:text-primary transition-colors">

@@ -20,7 +20,7 @@ import {
     Eye,
     Globe,
     Calendar,
-    Shield
+    Shield, Phone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,6 +71,7 @@ export default function ClientesPage() {
         rut: "",
         plan: "Pro",
         status: "Activo",
+        phone: "",
     });
 
     useEffect(() => {
@@ -113,7 +114,7 @@ export default function ClientesPage() {
 
     const handleOpenCreate = () => {
         setEditingCompany(null);
-        setFormData({ nombre: "", rut: "", plan: "Pro", status: "Activo" });
+        setFormData({ nombre: "", rut: "", plan: "Pro", status: "Activo", phone: "" });
         setSheetMode('create');
         setIsSheetOpen(true);
     };
@@ -125,6 +126,7 @@ export default function ClientesPage() {
             rut: company.rut,
             plan: company.plan,
             status: company.status,
+            phone: company.phone || ""
         });
         setSheetMode('edit');
         setIsSheetOpen(true);
@@ -141,14 +143,16 @@ export default function ClientesPage() {
                     name: formData.nombre,
                     rut: formData.rut,
                     plan: formData.plan,
-                    status: formData.status
+                    status: formData.status,
+                    phone: formData.phone
                 });
             } else {
                 result = await createCompanyAction({
                     name: formData.nombre,
                     rut: formData.rut,
                     plan: formData.plan,
-                    status: formData.status
+                    status: formData.status,
+                    phone: formData.phone
                 });
             }
 
@@ -363,6 +367,13 @@ export default function ClientesPage() {
 
                                         <div className="p-4 bg-white/5 rounded-lg border border-white/5 space-y-1">
                                             <div className="flex items-center gap-2 text-zinc-500 text-xs font-semibold uppercase tracking-wider">
+                                                <Phone className="h-3 w-3" /> Teléfono
+                                            </div>
+                                            <p className="text-white font-mono">{viewingCompany.phone || 'No registrado'}</p>
+                                        </div>
+
+                                        <div className="p-4 bg-white/5 rounded-lg border border-white/5 space-y-1">
+                                            <div className="flex items-center gap-2 text-zinc-500 text-xs font-semibold uppercase tracking-wider">
                                                 <Shield className="h-3 w-3" /> Nivel de Suscripción
                                             </div>
                                             <Badge variant="outline" className="mt-1 bg-white/5 border-white/10 text-zinc-300">
@@ -451,6 +462,16 @@ export default function ClientesPage() {
                                             placeholder="76.xxx.xxx-x" 
                                             value={formData.rut} 
                                             onChange={e => setFormData({...formData, rut: e.target.value})} 
+                                            className="bg-white/5 border-white/10" 
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="text-zinc-400 text-xs">Teléfono de Contacto (Opcional)</Label>
+                                        <Input 
+                                            placeholder="+56 9 1234 5678" 
+                                            value={formData.phone} 
+                                            onChange={e => setFormData({...formData, phone: e.target.value})} 
                                             className="bg-white/5 border-white/10" 
                                         />
                                     </div>

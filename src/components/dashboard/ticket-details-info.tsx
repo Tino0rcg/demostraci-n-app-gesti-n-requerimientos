@@ -1,19 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment, useRef } from "react";
 import { Ticket, User, Note, TicketStatus } from "@/lib/definitions";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, Clock, UserIcon, AlertCircle, Play, CheckCircle2, XCircle, Send, UserCheck, Loader2, Sparkles, Timer } from "lucide-react";
+import { MessageSquare, Clock, UserIcon, AlertCircle, Play, CheckCircle2, XCircle, Send, UserCheck, Loader2, Sparkles, Timer, Phone, Image as ImageIcon } from "lucide-react";
 import { getSlaStatus } from "@/lib/sla-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { sendTicketNotification } from "@/app/actions/notifications";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { updateTicketAction, getNotesAction, createNoteAction, getTicketAction } from "@/app/actions/tickets";
@@ -46,11 +45,21 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   const [profiles, setProfiles] = useState<User[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [timeLeftStr, setTimeLeftStr] = useState<string>("");
   const [isOverdueSla, setIsOverdueSla] = useState<boolean>(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<User | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [notes]);
 
   useEffect(() => {
     if (!ticket) return;
@@ -94,11 +103,16 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
     }
   }, [ticket, ticket?.status, ticket?.updatedAt, ticket?.resolvedAt, ticket?.dueAt]);
 
-  async function fetchData() {
+  async function fetchData(showLoading = true) {
     try {
-        setLoading(true);
-        // 1. Ticket (Usa acción de servidor para bypass RLS)
-        const ticketResult = await getTicketAction(ticketId);
+        if (showLoading) setLoading(true);
+
+        const [ticketResult, profilesResult, notesResult] = await Promise.all([
+            getTicketAction(ticketId),
+            getProfilesAction(),
+            getNotesAction(ticketId)
+        ]);
+
         if (ticketResult.success && ticketResult.data) {
             const ticketData = ticketResult.data;
             setTicket({
@@ -112,10 +126,8 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             });
         }
 
-        // 2. Perfiles (Usa acción de servidor para bypass RLS)
-        const result = await getProfilesAction();
-        if (result.success && result.data) {
-            const loadedProfiles = result.data as User[];
+        if (profilesResult.success && profilesResult.data) {
+            const loadedProfiles = profilesResult.data as User[];
             setProfiles(loadedProfiles);
             const { data: userData } = await supabase.auth.getUser();
             if (userData.user) {
@@ -124,8 +136,6 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             }
         }
 
-        // 3. Notas (Usa acción de servidor para bypass RLS)
-        const notesResult = await getNotesAction(ticketId);
         if (notesResult.success && notesResult.data) {
             setNotes(notesResult.data.map((n: any) => ({
                 ...n,
@@ -137,12 +147,12 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
     } catch (err) {
         console.error("Error loading ticket details:", err);
     } finally {
-        setLoading(false);
+        if (showLoading) setLoading(false);
     }
   }
 
   useEffect(() => {
-    fetchData();
+    fetchData(true);
   }, [ticketId]);
 
   if (loading) {
@@ -166,20 +176,41 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
 
   const sendMessage = async () => {
     if (!newMessage.trim() || sending) return;
+    
+    // Optimistic UI Update: inyectamos el mensaje en la pantalla al instante
+    const tempMessage = newMessage;
+    setNewMessage(""); 
     setSending(true);
+    
     try {
         const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user) return;
+        if (!userData.user) {
+            setNewMessage(tempMessage); // rollback si no hay usuario
+            return;
+        }
 
-        const result = await createNoteAction(ticketId, userData.user.id, newMessage);
+        const tempId = Date.now().toString();
+        const optimisticNote: Note = {
+            id: tempId,
+            ticketId: ticketId,
+            authorId: userData.user.id,
+            content: tempMessage,
+            createdAt: new Date(),
+        };
+
+        // Forzamos que se muestre en pantalla inmediatamente sin esperar a la BD
+        setNotes((prev: Note[]) => [...prev, optimisticNote]);
+
+        // Ahora sí, llamamos a la base de datos en los próximos milisegundos
+        const result = await createNoteAction(ticketId, userData.user.id, tempMessage);
 
         if (result.success) {
-            setNewMessage("");
-            fetchData();
+            fetchData(false); // Este re-fetch silencioso reemplazará el note temporal por el permanente
             if (onUpdate) onUpdate();
-            // Disparar email en background
-            sendTicketNotification(ticketId, "Nuevo mensaje en bitácora");
         } else {
+            // Rollback visual si falla
+            setNotes((prev: Note[]) => prev.filter(n => n.id !== tempId));
+            setNewMessage(tempMessage);
             toast({ title: "Error", description: "No se pudo enviar el mensaje.", variant: "destructive" });
         }
     } finally {
@@ -188,9 +219,12 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   };
 
   const handleReassign = async (newAssigneeId: string) => {
-    const result = await updateTicketAction(ticketId, { 
-        tecnico_asignado_id: newAssigneeId
-    });
+    if (isUpdating) return;
+    setIsUpdating(true);
+    try {
+        const result = await updateTicketAction(ticketId, { 
+            tecnico_asignado_id: newAssigneeId
+        });
 
     if (result.success) {
         const newTechName = profiles.find(u => u.id === newAssigneeId)?.name || "un nuevo técnico";
@@ -201,18 +235,22 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             await createNoteAction(ticketId, userData.user.id, `[SISTEMA] Caso reasignado a técnico especialista: ${newTechName}`);
         }
 
-        fetchData();
         if (onUpdate) onUpdate();
-        sendTicketNotification(ticketId, `🔄 Cambio de Responsable: Su requerimiento ha sido re-asignado a ${newTechName}.`);
         toast({ title: "Técnico reasignado", description: `Responsable actualizado a ${newTechName}.` });
     } else {
         toast({ title: "Error", description: "No se pudo reasignar el técnico.", variant: "destructive" });
     }
+    } finally {
+        setIsUpdating(false);
+    }
   };
 
   const handleAction = async (newStatus: TicketStatus, autoMessage?: string) => {
-    const updateData: any = { status: newStatus };
-    if (newStatus === "Terminado") updateData.resolved_at = new Date().toISOString();
+    if (isUpdating) return;
+    setIsUpdating(true);
+    try {
+        const updateData: any = { status: newStatus };
+        if (newStatus === "Terminado") updateData.resolved_at = new Date().toISOString();
 
     const result = await updateTicketAction(ticketId, updateData);
 
@@ -223,21 +261,22 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                 await createNoteAction(ticketId, userData.user.id, `[SISTEMA] ${autoMessage}`);
             }
         }
-        fetchData();
+        fetchData(false); // Refresco en segundo plano
         if (onUpdate) onUpdate();
-        // Disparar email en background
-        sendTicketNotification(ticketId, autoMessage ? `Cambio de Estado: ${newStatus}` : `Estado actualizado a ${newStatus}`);
         toast({ title: "Estado actualizado", description: `El ticket ahora está "${newStatus}".` });
     } else {
         toast({ title: "Error", description: "No se pudo actualizar el estado.", variant: "destructive" });
     }
+    } finally {
+        setIsUpdating(false);
+    }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)]">
+    <div className="flex flex-col flex-1 min-h-0 w-full">
       <SheetHeader className="mb-4 flex-none">
         <div className="flex items-center gap-2 mb-2">
-            <Badge variant="outline" className="text-xs bg-muted/30">#{ticket.id}</Badge>
+            <Badge variant="outline" className="text-xs bg-muted/30 font-bold text-primary border-primary/20">#{ticket.codigo || ticket.id.substring(0,8).toUpperCase()}</Badge>
             <Badge variant="outline" className={`text-xs ${statusColorMap[ticket.status]}`}>{ticket.status}</Badge>
             <Badge variant="outline" className={priorityColorMap[ticket.priority]}>{ticket.priority}</Badge>
             
@@ -260,6 +299,15 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                 <span className="text-zinc-500 font-medium">Solicitante:</span>
                 <span className="text-white font-bold">{submitter?.name || "Desconocido"}</span>
             </div>
+            {currentUserProfile?.id !== ticket.submitterId && submitter?.phone && (
+                <div className="flex items-center gap-2 text-xs">
+                    <span className="text-zinc-500 font-medium">Llamar Cliente:</span>
+                    <span className="text-blue-400 font-mono inline-flex items-center gap-1.5 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                        <Phone className="w-3 h-3" />
+                        <a href={`tel:${submitter.phone}`} className="hover:underline">{submitter.phone}</a>
+                    </span>
+                </div>
+            )}
             <div className="flex items-center gap-2 text-xs">
                 <span className="text-zinc-500 font-medium">Correo:</span>
                 <span className="text-zinc-300">{submitter?.email || "-"}</span>
@@ -272,6 +320,15 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                 <span className="text-zinc-500 font-medium">Resp. Técnico:</span>
                 <span className={`${assignee ? 'text-white font-bold' : 'text-zinc-500 italic'}`}>{assignee?.name || "Sin Asignar"}</span>
             </div>
+            {currentUserProfile?.id === ticket.submitterId && assignee?.phone && (
+                <div className="flex items-center gap-2 text-xs">
+                    <span className="text-zinc-500 font-medium">Llamar Soporte:</span>
+                    <span className="text-primary font-mono inline-flex items-center gap-1.5 bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                        <Phone className="w-3 h-3" />
+                        <a href={`tel:${assignee.phone}`} className="hover:underline">{assignee.phone}</a>
+                    </span>
+                </div>
+            )}
         </div>
         <div className="flex items-center text-[10px] text-muted-foreground mt-3 gap-3 opacity-70">
             <div className="flex items-center gap-1">
@@ -292,11 +349,11 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
 
             return (
                 <>
-                    <div className="mt-5 p-4 bg-primary/5 rounded-xl border border-primary/20">
-                        <h4 className="text-[11px] font-bold uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
-                            <Sparkles className="w-3 h-3" /> Descripción del Problema
+                    <div className="mt-5 p-5 bg-primary/5 rounded-xl border border-primary/20">
+                        <h4 className="text-xs font-bold uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
+                            <Sparkles className="w-4 h-4" /> Descripción del Problema
                         </h4>
-                        <div className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                        <div className="text-base text-zinc-200 leading-relaxed whitespace-pre-wrap">
                             {cleanDescription || "Sin descripción proporcionada."}
                         </div>
                     </div>
@@ -339,25 +396,25 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
         <h4 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Flujo de Trabajo Operativo</h4>
         <div className="flex flex-wrap gap-2">
             {ticket.status === 'Ingresado' && (currentUserProfile?.role === 'Técnico' || currentUserProfile?.role === 'Administrador Full') && (
-                <Button onClick={() => handleAction('En proceso', 'Ticket marcado como "En Proceso" por el técnico. Comenzando a trabajar en la solución.')} size="sm" className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30">
+                <Button disabled={isUpdating} onClick={() => handleAction('En proceso', 'Ticket marcado como "En Proceso" por el técnico. Comenzando a trabajar en la solución.')} size="sm" className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30">
                     <Play className="w-4 h-4 mr-2" /> Iniciar Trabajo (Agente)
                 </Button>
             )}
             
             {ticket.status === 'En proceso' && (currentUserProfile?.role === 'Técnico' || currentUserProfile?.role === 'Administrador Full') && (
-                <Button onClick={() => handleAction('Espera de aprobación', 'Trabajo finalizado por el técnico. Enviado al cliente para revisión y control de calidad.')} size="sm" className="bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30">
+                <Button disabled={isUpdating} onClick={() => handleAction('Espera de aprobación', 'Trabajo finalizado por el técnico. Enviado al cliente para revisión y control de calidad.')} size="sm" className="bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30">
                     <AlertCircle className="w-4 h-4 mr-2" /> Enviar a Revisión (Al Cliente)
                 </Button>
             )}
 
-            {ticket.status === 'Espera de aprobación' && (currentUserProfile?.role !== 'Técnico') && (
+            {ticket.status === 'Espera de aprobación' && (currentUserProfile?.id === ticket.submitterId) && (
                 <>
-                    <Button onClick={() => handleAction('Terminado', 'Solución validada y aceptada por el cliente. Ticket cerrado exitosamente.')} size="sm" className="bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30">
+                    <Button disabled={isUpdating} onClick={() => handleAction('Terminado', 'Solución validada y aceptada por el cliente. Ticket cerrado exitosamente.')} size="sm" className="bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30">
                         <CheckCircle2 className="w-4 h-4 mr-2" /> Aprobar Solución
                     </Button>
                     <div className="group relative">
                         <Button 
-                            disabled={!newMessage.trim()} 
+                            disabled={!newMessage.trim() || isUpdating} 
                             onClick={() => {
                                 handleAction('En proceso', `Solución RECHAZADA por el cliente. Motivo: ${newMessage}`);
                                 setNewMessage(""); // Limpiar caja después
@@ -425,20 +482,14 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
       </div>
       )}
 
-      <ScrollArea className="flex-1 pr-4 mb-4">
-        {/* Descripcion Completa */}
-        <div className="space-y-4 mb-6">
-            <h3 className="text-sm font-semibold text-primary">Descripción General</h3>
-            <p className="text-sm border-l-2 border-primary/50 pl-4 py-2 bg-muted/10 text-muted-foreground whitespace-pre-wrap">
-                {ticket.description}
-            </p>
-        </div>
 
-        {/* Chat / Bitácora (El historial de actividad interactiva) */}
+
+      {/* Chat / Bitácora (Caja independiente con scroll) */}
+      <h3 className="text-[11px] font-bold flex items-center gap-2 text-primary flex-none mb-3 pl-1 uppercase tracking-widest">
+          <MessageSquare className="h-4 w-4" /> Historial de Conversación
+      </h3>
+      <ScrollArea className="h-[40vh] min-h-[300px] mb-4 bg-black/20 border border-white/5 rounded-xl p-4 shadow-inner">
         <div className="space-y-4">
-            <h3 className="text-sm font-semibold flex items-center gap-2 text-primary">
-                <MessageSquare className="h-4 w-4" /> Conversación Intercom
-            </h3>
             
             {notes.length === 0 ? (
                 <div className="text-sm text-center py-6 text-muted-foreground border border-dashed border-white/10 rounded-lg">
@@ -446,57 +497,82 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {notes.map(n => {
+                    {notes.map((n, index) => {
                         const isSystem = n.content.trim().startsWith("[SISTEMA]");
                         const content = isSystem ? n.content.replace("[SISTEMA] ", "").replace("[SISTEMA]", "") : n.content;
                         
+                        const currentDateString = format(n.createdAt, "yyyy-MM-dd");
+                        const previousDateString = index > 0 ? format(notes[index - 1].createdAt, "yyyy-MM-dd") : null;
+                        const showDateSeparator = currentDateString !== previousDateString;
+
                         if (isSystem) {
                             return (
-                                <div key={n.id} className="flex flex-col items-center py-4 relative">
-                                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                                        <div className="w-full border-t border-white/5"></div>
-                                    </div>
-                                    <div className="relative flex items-center justify-center">
-                                        <div className="bg-zinc-900 px-4 flex items-center gap-2">
-                                            <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 bg-black/20 px-3 py-1 rounded-full border border-white/5">
-                                                {content}
+                                <Fragment key={n.id}>
+                                    {showDateSeparator && (
+                                        <div className="flex justify-center mt-6 mb-2">
+                                            <span className="px-3 py-1 bg-black/40 border border-white/10 rounded-full text-[10px] font-bold text-zinc-400 uppercase tracking-widest shadow-inner">
+                                                {format(n.createdAt, "dd 'de' MMMM, yyyy")}
                                             </span>
-                                            <span className="text-[9px] text-zinc-600 font-mono">{format(n.createdAt, "HH:mm")}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col items-center py-4 relative">
+                                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                            <div className="w-full border-t border-white/5"></div>
+                                        </div>
+                                        <div className="relative flex items-center justify-center">
+                                            <div className="bg-zinc-900 px-4 flex items-center gap-2">
+                                                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 bg-black/20 px-3 py-1.5 rounded-full border border-white/5">
+                                                    {content}
+                                                </span>
+                                                <span className="text-[10px] text-zinc-500 font-mono">{format(n.createdAt, "HH:mm")}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </Fragment>
                             );
                         }
 
                         const autor = profiles.find(u => u.id === n.authorId);
-                        const esSubmitter = n.authorId === ticket.submitterId;
+                        const isMe = n.authorId === currentUserProfile?.id;
                         
                         return (
-                            <div key={n.id} className={`flex gap-3 ${esSubmitter ? 'flex-row' : 'flex-row-reverse'}`}>
-                                <Avatar className="h-8 w-8 mt-1 border border-white/10 shrink-0">
-                                    <AvatarImage src={autor?.avatarUrl} />
-                                    <AvatarFallback><UserIcon className="h-4 w-4" /></AvatarFallback>
-                                </Avatar>
-                                <div className={`flex flex-col max-w-[85%] ${esSubmitter ? 'items-start' : 'items-end'}`}>
-                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                        <span className="text-[11px] font-bold text-white/90">{autor?.name}</span>
-                                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-500 font-medium uppercase tracking-tighter">
-                                            {autor?.empresa}
+                            <Fragment key={n.id}>
+                                {showDateSeparator && (
+                                    <div className="flex justify-center mt-6 mb-2">
+                                        <span className="px-3 py-1 bg-black/40 border border-white/10 rounded-full text-[10px] font-bold text-zinc-400 uppercase tracking-widest shadow-inner">
+                                            {format(n.createdAt, "dd 'de' MMMM, yyyy")}
                                         </span>
-                                        <span className="text-[10px] text-muted-foreground/50 ml-auto">{format(n.createdAt, "HH:mm")}</span>
                                     </div>
-                                    <div className={`p-3 rounded-2xl text-sm ${
-                                        esSubmitter 
-                                        ? 'bg-muted/30 text-foreground rounded-tl-sm' 
-                                        : 'bg-primary/20 text-primary shadow-lg shadow-primary/5 border border-primary/20 rounded-tr-sm'
-                                    }`}>
-                                        <p className="whitespace-pre-wrap">{content}</p>
+                                )}
+                                <div className={`flex gap-3 ${!isMe ? 'flex-row' : 'flex-row-reverse'}`}>
+                                    <Avatar className="h-8 w-8 mt-1 border border-white/10 shrink-0">
+                                        <AvatarImage src={autor?.avatarUrl} />
+                                        <AvatarFallback><UserIcon className="h-4 w-4" /></AvatarFallback>
+                                    </Avatar>
+                                    <div className={`flex flex-col max-w-[85%] ${!isMe ? 'items-start' : 'items-end'}`}>
+                                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                            <span className="text-sm font-bold text-white/90">{isMe ? 'Tú' : autor?.name}</span>
+                                            {!isMe && (
+                                                <span className="text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-400 font-medium uppercase tracking-wider">
+                                                    {autor?.empresa}
+                                                </span>
+                                            )}
+                                            <span className="text-xs text-muted-foreground/60">{format(n.createdAt, "HH:mm")}</span>
+                                        </div>
+                                        <div className={`p-4 rounded-2xl text-[15px] shadow-sm ${
+                                            !isMe 
+                                            ? 'bg-muted/40 text-foreground rounded-tl-sm border border-white/5' 
+                                            : 'bg-primary/20 text-primary shadow-primary/5 border border-primary/30 rounded-tr-sm'
+                                        }`}>
+                                            <p className="whitespace-pre-wrap leading-relaxed">{content}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </Fragment>
                         )
                     })}
+                    <div ref={messagesEndRef} />
                 </div>
             )}
         </div>

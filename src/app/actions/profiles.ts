@@ -25,6 +25,7 @@ export async function createProfileAction(data: {
   specialty?: string;
   status?: string;
   avatar_url?: string;
+  phone?: string;
 }) {
   try {
     const supabaseAdmin = createAdminClient();
@@ -62,6 +63,7 @@ export async function createProfileAction(data: {
       specialty: data.specialty,
       status: data.status || 'Disponible',
       avatar_url: data.avatar_url || '/avatars/3.png',
+      phone: data.phone || null,
       rating: data.role === 'Técnico' ? 5.0 : null
     }, { onConflict: 'id' });
 
@@ -142,6 +144,7 @@ export async function updateProfileAction(id: string, data: {
   specialty?: string;
   status?: string;
   avatar_url?: string;
+  phone?: string;
 }) {
   try {
     const supabaseAdmin = createAdminClient();
@@ -163,7 +166,8 @@ export async function updateProfileAction(id: string, data: {
         company_id: data.company_id,
         specialty: data.specialty,
         status: data.status,
-        avatar_url: data.avatar_url
+        avatar_url: data.avatar_url,
+        phone: data.phone || null
       })
       .eq('id', id);
 

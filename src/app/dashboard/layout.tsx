@@ -114,15 +114,7 @@ export default async function DashboardLayout({
                     <NavLinks role={userData.role} />
                 </nav>
 
-                <nav className="mt-auto px-4 pb-6">
-                    <Link
-                        href="#"
-                        className="flex items-center gap-3 rounded-lg text-muted-foreground px-3 py-2.5 transition-all hover:bg-white/5 hover:text-foreground"
-                    >
-                        <Settings className="h-5 w-5" />
-                        <span>Configuración</span>
-                    </Link>
-                </nav>
+
             </aside>
             <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-60">
                 <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-white/5 glass-panel px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
@@ -140,7 +132,7 @@ export default async function DashboardLayout({
                                     className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
                                 >
                                     <Ticket className="h-5 w-5 transition-all group-hover:scale-110" />
-                                    <span className="sr-only">GestorRequerimientos</span>
+                                    <span className="sr-only">OnlineDesk</span>
                                 </Link>
                                 <Link
                                     href="/dashboard/tickets/new"

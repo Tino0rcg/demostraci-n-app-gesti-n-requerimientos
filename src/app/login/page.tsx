@@ -20,7 +20,7 @@ function errorToSpanish(message: string): string {
     if (message.includes("FetchError")) {
          return "Fallo de conexión a la base de datos.";
     }
-    return "Ha ocurrido un error inesperado al intentar iniciar sesión.";
+    return `Ha ocurrido un error inesperado al intentar iniciar sesión. Detalles: ${message}`;
 }
 
 export default function LoginPage() {
@@ -62,18 +62,21 @@ export default function LoginPage() {
                 <div className="h-1 w-full bg-gradient-to-r from-transparent via-primary to-transparent" />
                 <CardHeader className="space-y-4 text-center pt-8 pb-4">
                     <div className="flex justify-center mb-2">
-                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 shadow-inner">
+                        <div className="p-3 rounded-2xl bg-white border border-white/10 shadow-inner">
                             <Image 
-                                src="https://github.com/Tino0rcg/imagenes-pagina-online-2.0/blob/main/LOGO%20ONLINE%20SYSTEM%20NORMAL.png?raw=true" 
+                                src="https://github.com/Tino0rcg/fotos-Onlinedesk/blob/main/ChatGPT%20Image%2026%20jun%202026%2C%2002_08_41%20a.m..png?raw=true" 
                                 alt="Online System Logo" 
-                                width={60} 
-                                height={60}
+                                width={120} 
+                                height={120}
                                 className="object-contain"
                             />
                         </div>
                     </div>
                     <div className="space-y-1">
-                        <CardTitle className="text-2xl font-black tracking-tighter text-white uppercase italic">Acceso Online System</CardTitle>
+                        <div className="flex flex-col">
+                            <CardTitle className="text-2xl font-black tracking-tighter text-white uppercase italic leading-none">Acceso OnlineDesk</CardTitle>
+                            <span className="text-[10px] font-bold tracking-[0.2em] text-blue-400 uppercase mt-2">by Online System</span>
+                        </div>
                         <CardDescription className="text-zinc-500 font-medium italic">
                             Identifíquese para gestionar sus requerimientos.
                         </CardDescription>

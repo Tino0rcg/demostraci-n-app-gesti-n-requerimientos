@@ -12,7 +12,7 @@ function createAdminClient() {
   )
 }
 
-export async function createCompanyAction(data: { name: string; rut: string; plan: string; status: string }) {
+export async function createCompanyAction(data: { name: string; rut: string; plan: string; status: string; phone?: string }) {
   try {
     const supabaseAdmin = createAdminClient();
     
@@ -53,7 +53,7 @@ export async function getCompaniesAction() {
   }
 }
 
-export async function updateCompanyAction(id: string, data: { name: string; rut: string; plan: string; status: string }) {
+export async function updateCompanyAction(id: string, data: { name: string; rut: string; plan: string; status: string; phone?: string }) {
   try {
     const supabaseAdmin = createAdminClient();
     const { error } = await supabaseAdmin

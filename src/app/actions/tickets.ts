@@ -127,19 +127,19 @@ export async function updateTicketAction(id: string, data: any) {
             return { success: false, error: error.message };
         }
 
-        // Lógicas de notificación automatizadas (State Transitions)
+        // Determinar qué cambió para el mensaje de notificación
+        let actionMessage = 'Actualización en el Ticket';
+        if (data.status && oldTicket?.status !== data.status) {
+            actionMessage = `Cambio de Estado a ${data.status}`;
+        } else if (data.tecnico_asignado_id !== undefined && oldTicket?.tecnico_asignado_id !== data.tecnico_asignado_id) {
+            actionMessage = 'Reasignación de Técnico';
+        }
+
+        // Lanzar Notificación al Cliente
         try {
-            // Regla 1: Asignación o Reasignación de Técnico
-            if (data.tecnico_asignado_id && oldTicket?.tecnico_asignado_id !== data.tecnico_asignado_id) {
-                await sendTicketNotification(id, 'Asignación de Nuevo Ticket', 'assignee');
-            }
-            
-            // Regla 2: Cambio de Estado (aviso al cliente)
-            if (data.status && oldTicket?.status !== data.status) {
-                await sendTicketNotification(id, `Tu ticket avanzó a la etapa: ${data.status}`, 'submitter');
-            }
+            await sendTicketNotification(id, actionMessage, 'submitter');
         } catch(e) {
-            console.error("Fallo de notificacion al transicionar:", e);
+            console.error("Fallo de notificacion (update):", e);
         }
 
         return { success: true };
@@ -239,11 +239,27 @@ export async function createNoteAction(ticketId: string, authorId: string, conte
 
         if (error) return { success: false, error: error.message };
 
-        // Lanzar Notificación por Correo
-        try {
-            await sendTicketNotification(ticketId, 'Nueva evidencia agregada en Bitácora', 'submitter');
-        } catch(e) {
-            console.error("Fallo de notificacion:", e);
+        // Obtener el ticket para saber quiénes son los involucrados
+        const { data: ticket } = await supabaseAdmin.from('tickets').select('creador_id, tecnico_asignado_id').eq('id', ticketId).single();
+        
+        // No enviar notificaciones de chat para mensajes automáticos del sistema
+        if (ticket && !content.trim().startsWith('[SISTEMA]')) {
+            let targetRole: 'submitter' | 'assignee' = 'submitter';
+            
+            // Si el que escribe es el cliente, notificamos al técnico
+            if (authorId === ticket.creador_id && ticket.tecnico_asignado_id) {
+                targetRole = 'assignee';
+            }
+            // Si el que escribe es el técnico (o un admin distinto al creador), notificamos al cliente
+            else {
+                targetRole = 'submitter';
+            }
+
+            try {
+                await sendTicketNotification(ticketId, 'Nuevo Mensaje en el Chat', targetRole);
+            } catch(e) {
+                console.error("Fallo de notificacion (chat):", e);
+            }
         }
 
         return { success: true };

@@ -4,13 +4,9 @@ import { Button } from "@/components/ui/button";
 import { 
   ArrowRight, 
   Zap, 
-  BarChart3, 
   Clock, 
-  CheckCircle2, 
   ShieldCheck,
-  Activity,
-  MessageSquare,
-  Headphones
+  Activity
 } from "lucide-react";
 
 export default function Home() {
@@ -19,28 +15,32 @@ export default function Home() {
       
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-600/10 rounded-full blur-[120px] mix-blend-screen" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-indigo-600/10 rounded-full blur-[120px] mix-blend-screen" />
-        <div className="absolute top-[30%] left-[50%] -translate-x-1/2 w-[60%] h-[40%] bg-blue-400/5 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-600/15 rounded-full blur-[140px] mix-blend-screen" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-indigo-600/15 rounded-full blur-[140px] mix-blend-screen" />
+        <div className="absolute top-[30%] left-[50%] -translate-x-1/2 w-[60%] h-[40%] bg-blue-400/5 rounded-full blur-[120px] animate-pulse" />
       </div>
 
       {/* Modern Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/50 backdrop-blur-xl">
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/60 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image 
-              src="https://github.com/Tino0rcg/imagenes-pagina-online-2.0/blob/main/LOGO%20ONLINE%20SYSTEM%20NORMAL.png?raw=true" 
-              alt="Online System Logo" 
-              width={110} 
-              height={110}
-              className="object-contain -my-8 drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]"
+              src="https://github.com/Tino0rcg/fotos-Onlinedesk/blob/main/ChatGPT%20Image%2026%20jun%202026%2C%2002_08_41%20a.m..png?raw=true" 
+              alt="OnlineDesk Logo" 
+              width={80} 
+              height={80}
+              className="object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"
             />
-            <span className="text-xl font-bold tracking-tight text-white uppercase italic">Online<span className="text-blue-500 font-light">System</span></span>
+            <div className="flex flex-col">
+              <span className="text-2xl font-black tracking-tighter text-white uppercase italic leading-none">OnlineDesk</span>
+              <span className="text-[9px] font-bold tracking-[0.2em] text-blue-400 uppercase leading-none mt-1">by Online System</span>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/login">
-              <Button className="rounded-full bg-white text-black hover:bg-zinc-200 font-semibold px-6 shadow-[0_0_20px_rgba(255,255,255,0.15)] transition-all">
+              <Button className="rounded-full bg-white text-black hover:bg-blue-50 hover:text-blue-600 hover:scale-105 font-bold px-7 shadow-[0_0_20px_rgba(255,255,255,0.15)] transition-all duration-300 group">
                 Ingresar al Portal
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </div>
@@ -48,10 +48,10 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative z-10 pt-32 pb-20 px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
+      <section className="relative z-10 pt-40 pb-20 px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
         
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-8 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider backdrop-blur-sm">
+        <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold uppercase tracking-wider backdrop-blur-md shadow-[0_0_20px_rgba(59,130,246,0.2)]">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
@@ -60,35 +60,34 @@ export default function Home() {
         </div>
 
         {/* Main Headline */}
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter leading-[1.05] mb-8 max-w-5xl">
+        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[1.05] mb-8 max-w-5xl">
           Gestión de Servicios <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 drop-shadow-sm">
             Inteligente & Rápida.
           </span>
         </h1>
 
         {/* Subtitle */}
-        <p className="max-w-2xl mb-10 text-lg md:text-xl text-zinc-400 font-medium leading-relaxed">
-          Optimiza la resolución de incidentes, controla tus SLAs en tiempo real y centraliza las operaciones de tu equipo técnico con nuestra plataforma de próxima generación.
+        <p className="max-w-3xl mb-12 text-lg md:text-xl text-zinc-400 font-medium leading-relaxed">
+          Optimiza la resolución de incidentes, controla tus SLAs en tiempo real y centraliza las operaciones de tu equipo técnico con OnlineDesk, la herramienta corporativa definitiva.
         </p>
-
 
       </section>
 
 
 
       {/* Footer Minimal */}
-      <footer className="border-t border-white/10 bg-black/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+      <footer className="relative z-10 border-t border-white/10 bg-black/40 backdrop-blur-xl mt-20">
+        <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
                 <Image 
-                  src="https://github.com/Tino0rcg/imagenes-pagina-online-2.0/blob/main/LOGO%20ONLINE%20SYSTEM%20NORMAL.png?raw=true" 
-                  alt="Online System Logo" 
-                  width={20} 
-                  height={20}
-                  className="object-contain opacity-50"
+                  src="https://github.com/Tino0rcg/fotos-Onlinedesk/blob/main/ChatGPT%20Image%2026%20jun%202026%2C%2002_08_41%20a.m..png?raw=true" 
+                  alt="OnlineDesk Logo" 
+                  width={24} 
+                  height={24}
+                  className="object-contain opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all"
                 />
-                <span className="font-bold text-sm text-zinc-300">Online System © {new Date().getFullYear()}</span>
+                <span className="font-bold text-sm text-zinc-500">OnlineDesk © {new Date().getFullYear()}</span>
             </div>
             <p className="text-[11px] text-zinc-500 uppercase tracking-widest font-bold">Plataforma Asegurada y Restringida</p>
         </div>

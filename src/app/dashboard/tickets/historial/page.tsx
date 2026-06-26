@@ -13,9 +13,14 @@ export default async function HistorialTicketsPage() {
     const tickets = (ticketsRes.success ? ticketsRes.data : []) as Ticket[];
     const allUsers = (profilesRes.success ? profilesRes.data : []) as User[];
 
-    // En el historial usualmente queremos ver los terminados, 
-    // pero el componente TicketTable puede filtrar internamente o podemos hacerlo aquí.
-    const finishedTickets = tickets.filter(t => t.status === 'Terminado');
+    const now = new Date();
+    const finishedTickets = tickets.filter(t => {
+        if (t.status !== 'Terminado') return false;
+        if (!t.resolvedAt) return false; // En caso de tickets antiguos sin fecha
+        const diffInMs = now.getTime() - new Date(t.resolvedAt).getTime();
+        const diffInHours = diffInMs / (1000 * 60 * 60);
+        return diffInHours > 24;
+    });
 
     return (
         <div className="flex flex-col gap-6">

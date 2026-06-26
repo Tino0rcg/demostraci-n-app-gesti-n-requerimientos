@@ -25,7 +25,7 @@ import {
     Shield,
     User as UserIcon,
     Calendar,
-    Hash
+    Hash, Phone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,6 +81,7 @@ export default function UsuariosPage() {
         empresa: "",
             rol: "Usuario",
         password: "",
+        phone: "",
     });
 
     useEffect(() => {
@@ -139,7 +140,8 @@ export default function UsuariosPage() {
             email: "", 
             empresa: (userRole === 'Administrador Cliente') ? (myCompanyId || "") : "", 
             rol: "Usuario", 
-            password: "" 
+            password: "",
+            phone: "" 
         });
         setSheetMode('create');
         setIsSheetOpen(true);
@@ -153,6 +155,7 @@ export default function UsuariosPage() {
             empresa: user.company_id || "interno",
             rol: user.role || "Usuario",
             password: "",
+            phone: user.phone || ""
         });
         setSheetMode('edit');
         setIsSheetOpen(true);
@@ -170,7 +173,8 @@ export default function UsuariosPage() {
                     role: formData.rol,
                     password: formData.password, // Incluir password si se llenó
                     company_id: formData.empresa === "interno" ? undefined : formData.empresa,
-                    avatar_url: `/avatars/1.png`
+                    avatar_url: `/avatars/1.png`,
+                    phone: formData.phone
                 });
             } else {
                 result = await createProfileAction({
@@ -179,7 +183,8 @@ export default function UsuariosPage() {
                     password: formData.password,
                     role: formData.rol,
                     company_id: formData.empresa === "interno" ? undefined : formData.empresa,
-                    avatar_url: `/avatars/1.png`
+                    avatar_url: `/avatars/1.png`,
+                    phone: formData.phone
                 });
             }
 
@@ -411,6 +416,13 @@ export default function UsuariosPage() {
 
                                             <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-1">
                                                 <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
+                                                    <Phone className="h-3 w-3" /> Teléfono
+                                                </div>
+                                                <p className="text-white text-sm break-all font-mono">{viewingUser.phone || "No registrado"}</p>
+                                            </div>
+
+                                            <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-1">
+                                                <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
                                                     <Building className="h-3 w-3" /> Organización
                                                 </div>
                                                 <p className="text-white text-sm">
@@ -503,6 +515,16 @@ export default function UsuariosPage() {
                                             onChange={e => setFormData({...formData, email: e.target.value})} 
                                             className="bg-white/5 border-white/10" 
                                             disabled={!!editingUser} 
+                                            autoComplete="off"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-zinc-400 text-xs">Teléfono de Contacto (Opcional)</Label>
+                                        <Input 
+                                            placeholder="+56 9 1234 5678" 
+                                            value={formData.phone} 
+                                            onChange={e => setFormData({...formData, phone: e.target.value})} 
+                                            className="bg-white/5 border-white/10" 
                                             autoComplete="off"
                                         />
                                     </div>

@@ -35,8 +35,8 @@ export async function sendTicketNotification(ticketId: string, actionType: strin
             updatedAt: new Date(ticketData.updated_at),
             dueAt: new Date(ticketData.due_at),
             resolvedAt: ticketData.resolved_at ? new Date(ticketData.resolved_at) : null,
-            submitterId: ticketData.submitter_id,
-            assigneeId: ticketData.assignee_id,
+            submitterId: ticketData.creador_id,
+            assigneeId: ticketData.tecnico_asignado_id,
         };
 
         // Notas (Bitácora)
@@ -72,22 +72,21 @@ export async function sendTicketNotification(ticketId: string, actionType: strin
 
         const targetEmail = targetRole === 'assignee' ? assignee?.email : submitter?.email;
         const targetName = targetRole === 'assignee' ? assignee?.name : submitter?.name;
-
         // 3. Evaluar configuración de Brevo
         if (!process.env.BREVO_SMTP_KEY || process.env.BREVO_SMTP_KEY === 'test') {
             console.log("\n================ [ ENTORNO LOCAL / MOCK ] ================");
             console.log(`📡 BREVO EMAIL SIMULATION -> ${actionType}`);
             console.log(`📩 Destino: ${targetEmail}`);
-            console.log(`📎 Adjunto PDF Listo: Trazabilidad_${ticket.id}.pdf (${(pdfBuffer.length / 1024).toFixed(2)} KB)`);
+            console.log(`📎 Adjunto PDF Listo: Trazabilidad_${ticket.codigo || ticket.id.substring(0,8)}.pdf (${(pdfBuffer.length / 1024).toFixed(2)} KB)`);
             console.log("========================================================\n");
             return { success: true, simulated: true };
         }
 
         // 4. Despacho real con Brevo SMTP
         await transporter.sendMail({
-            from: `"Soporte Vanguardia" <${process.env.BREVO_EMAIL}>`,
+            from: `"Soporte OnlineDesk" <${process.env.BREVO_EMAIL}>`,
             to: targetEmail || process.env.BREVO_EMAIL,
-            subject: `[Ticket ${ticket.id}] Actualización: ${actionType}`,
+            subject: `[Ticket ${ticket.codigo || ticket.id.substring(0,8).toUpperCase()}] Actualización: ${actionType}`,
             html: `
                 <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e4e4e7; border-radius: 8px; overflow: hidden;">
                     <div style="background: #09090b; padding: 20px; text-align: center;">
@@ -108,7 +107,7 @@ export async function sendTicketNotification(ticketId: string, actionType: strin
             `,
             attachments: [
                 {
-                    filename: `Trazabilidad_${ticket.id}.pdf`,
+                    filename: `Trazabilidad_${ticket.codigo || ticket.id.substring(0,8)}.pdf`,
                     content: pdfBuffer,
                     contentType: 'application/pdf',
                 }

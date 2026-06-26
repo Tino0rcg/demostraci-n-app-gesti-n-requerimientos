@@ -27,7 +27,9 @@ import {
     EyeOff,
     Shield,
     Calendar,
-    Award
+    Award,
+    Pencil,
+    Mail
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";

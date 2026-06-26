@@ -308,7 +308,7 @@ export function TicketTable({ tickets, allUsers }: { tickets: Ticket[], allUsers
 
       {/* Detalles del Ticket Side Panel */}
       <Sheet open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-          <SheetContent className="sm:max-w-xl glass-panel border-l-primary/20 p-0 overflow-y-auto">
+          <SheetContent className="w-[90vw] max-w-none sm:max-w-md md:max-w-lg lg:max-w-xl glass-panel border-l-primary/20 p-6 overflow-hidden flex flex-col">
               {selectedTicket && (
                   <TicketDetailsInfo ticketId={selectedId} />
               )}
