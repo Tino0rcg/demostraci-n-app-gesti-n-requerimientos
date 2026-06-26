@@ -6,6 +6,8 @@ import { getTicketsAction } from "@/app/actions/tickets";
 import { getProfilesAction } from "@/app/actions/profiles";
 import type { Ticket, User } from "@/lib/definitions";
 
+export const dynamic = 'force-dynamic';
+
 export default async function HistorialTicketsPage() {
     const ticketsRes = await getTicketsAction();
     const profilesRes = await getProfilesAction();
