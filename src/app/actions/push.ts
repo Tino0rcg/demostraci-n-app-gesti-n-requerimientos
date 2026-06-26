@@ -3,11 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import webpush from 'web-push'
 
-webpush.setVapidDetails(
-  process.env.NEXT_PUBLIC_VAPID_SUBJECT || 'mailto:soporte@onlinedesk.com',
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '',
-  process.env.VAPID_PRIVATE_KEY || ''
-)
+// Inicialización diferida de VAPID keys para evitar fallos en tiempo de compilación (Next.js build)
 
 export async function savePushSubscriptionAction(subscription: any) {
   try {
@@ -52,6 +48,17 @@ export async function savePushSubscriptionAction(subscription: any) {
 
 export async function sendPushToUser(userId: string, title: string, body: string, url: string = '/') {
   try {
+    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+      console.warn('VAPID keys no configuradas. Omitiendo notificación Push.');
+      return { success: false, message: 'Faltan variables de entorno VAPID' };
+    }
+
+    webpush.setVapidDetails(
+      process.env.NEXT_PUBLIC_VAPID_SUBJECT || 'mailto:soporte@onlinedesk.com',
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY
+    );
+
     const supabase = await createClient()
     
     // Obtener todas las suscripciones del usuario
