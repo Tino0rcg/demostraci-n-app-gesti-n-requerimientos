@@ -49,8 +49,6 @@ import { Logo } from "@/components/logo";
 import { UserNav } from "@/components/user-nav";
 import { NavLinks } from "@/components/dashboard/nav-links";
 import { PullToRefresh } from "@/components/ui/pull-to-refresh";
-import { PushManager } from "@/components/push-manager";
-
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 
 export default async function DashboardLayout({
@@ -160,7 +158,6 @@ export default async function DashboardLayout({
                     <UserNav user={userData} />
                 </header>
                 <main className="flex flex-col flex-1 w-full min-w-0 gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-                    <PushManager />
                     <PullToRefresh>
                         {children}
                     </PullToRefresh>
