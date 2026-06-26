@@ -23,16 +23,16 @@ export default async function HistorialTicketsPage() {
     });
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" asChild>
+        <div className="flex flex-col gap-6 w-full min-w-0">
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+                <Button variant="outline" size="icon" asChild className="shrink-0 mt-1 sm:mt-0 glass-card bg-black/20 border-white/10">
                     <Link href="/dashboard">
                         <ArrowLeft className="h-4 w-4" />
                     </Link>
                 </Button>
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-white uppercase italic">Historial de Tickets</h1>
-                    <p className="text-muted-foreground mt-1 text-sm">
+                    <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-white uppercase italic leading-tight">Historial de Tickets</h1>
+                    <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
                         Registro histórico de todos los requerimientos finalizados y cerrados.
                     </p>
                 </div>

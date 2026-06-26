@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { TicketDetailsInfo } from "@/components/dashboard/ticket-details-info";
 import { getSlaStatus } from "@/lib/sla-utils";
 import type { Ticket, User, TicketStatus, TicketPriority } from "@/lib/definitions";
@@ -191,7 +191,7 @@ export function TicketTable({ tickets, allUsers }: { tickets: Ticket[], allUsers
   , [selectedId, tickets]);
 
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0">
       <div className="flex items-center py-4 gap-4">
         <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500" />
@@ -206,7 +206,7 @@ export function TicketTable({ tickets, allUsers }: { tickets: Ticket[], allUsers
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto glass-card bg-black/20 border-white/10">
+            <Button id="columns-dropdown-trigger" variant="outline" className="ml-auto glass-card bg-black/20 border-white/10">
               Columns <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -308,7 +308,8 @@ export function TicketTable({ tickets, allUsers }: { tickets: Ticket[], allUsers
 
       {/* Detalles del Ticket Side Panel */}
       <Sheet open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-          <SheetContent className="w-[90vw] max-w-none sm:max-w-md md:max-w-lg lg:max-w-xl glass-panel border-l-primary/20 p-6 overflow-hidden flex flex-col">
+          <SheetContent className="w-full max-w-none sm:max-w-md md:max-w-lg lg:max-w-xl glass-panel border-l-primary/20 p-3 sm:p-6 overflow-hidden flex flex-col">
+              <SheetTitle className="sr-only">Detalles del Requerimiento</SheetTitle>
               {selectedTicket && (
                   <TicketDetailsInfo ticketId={selectedId} />
               )}

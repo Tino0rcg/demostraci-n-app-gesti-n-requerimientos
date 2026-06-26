@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { updateTicketAction, getNotesAction, createNoteAction, getTicketAction } from "@/app/actions/tickets";
@@ -391,8 +392,19 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
         })()}
       </SheetHeader>
 
-      {/* Controles de Flujo de Trabajo (Workflow Panel) */}
-      <div className="mb-6 flex-none bg-gradient-to-r from-muted/20 to-muted/5 border border-white/10 rounded-xl p-4">
+      <ScrollArea className="flex-1 pr-4 mr-[-16px]">
+        <div className="flex flex-col min-h-full pb-8">
+            {/* Controles de Ticket permanentemente visibles */}
+            <div className="w-full mb-4">
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 shadow-lg">
+                    <div className="flex items-center gap-2 mb-4 border-b border-primary/10 pb-3">
+                        <span className="text-[11px] font-black uppercase tracking-widest text-primary">⚙️ Acciones Requeridas</span>
+                        {(ticket.status === 'En proceso' || ticket.status === 'Ingresado' || ticket.status === 'Espera de aprobación') && (
+                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                        )}
+                    </div>
+                        {/* Controles de Flujo de Trabajo (Workflow Panel) */}
+      <div className="mb-6 flex-none">
         <h4 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Flujo de Trabajo Operativo</h4>
         <div className="flex flex-wrap gap-2">
             {ticket.status === 'Ingresado' && (currentUserProfile?.role === 'Técnico' || currentUserProfile?.role === 'Administrador Full') && (
@@ -481,14 +493,14 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
         </div>
       </div>
       )}
+                </div>
+            </div>
 
-
-
-      {/* Chat / Bitácora (Caja independiente con scroll) */}
-      <h3 className="text-[11px] font-bold flex items-center gap-2 text-primary flex-none mb-3 pl-1 uppercase tracking-widest">
+      {/* Chat / Bitácora (Caja independiente) */}
+      <h3 className="text-xs font-bold flex items-center gap-2 text-primary flex-none mb-3 pl-1 uppercase tracking-widest mt-4">
           <MessageSquare className="h-4 w-4" /> Historial de Conversación
       </h3>
-      <ScrollArea className="h-[40vh] min-h-[300px] mb-4 bg-black/20 border border-white/5 rounded-xl p-4 shadow-inner">
+      <div className="flex-1 bg-black/20 border border-white/5 rounded-xl p-4 shadow-inner">
         <div className="space-y-4">
             
             {notes.length === 0 ? (
@@ -525,7 +537,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                                                 <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 bg-black/20 px-3 py-1.5 rounded-full border border-white/5">
                                                     {content}
                                                 </span>
-                                                <span className="text-[10px] text-zinc-500 font-mono">{format(n.createdAt, "HH:mm")}</span>
+                                                <span className="text-xs text-zinc-500 font-mono">{format(n.createdAt, "HH:mm")}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -554,13 +566,13 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                                         <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                                             <span className="text-sm font-bold text-white/90">{isMe ? 'Tú' : autor?.name}</span>
                                             {!isMe && (
-                                                <span className="text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-400 font-medium uppercase tracking-wider">
+                                                <span className="text-xs px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-400 font-medium uppercase tracking-wider">
                                                     {autor?.empresa}
                                                 </span>
                                             )}
                                             <span className="text-xs text-muted-foreground/60">{format(n.createdAt, "HH:mm")}</span>
                                         </div>
-                                        <div className={`p-4 rounded-2xl text-[15px] shadow-sm ${
+                                        <div className={`p-4 rounded-2xl text-base shadow-sm ${
                                             !isMe 
                                             ? 'bg-muted/40 text-foreground rounded-tl-sm border border-white/5' 
                                             : 'bg-primary/20 text-primary shadow-primary/5 border border-primary/30 rounded-tr-sm'
@@ -576,15 +588,17 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                 </div>
             )}
         </div>
+      </div>
+      </div>
       </ScrollArea>
 
       {/* Input de Mensajes */}
       {ticket.status !== 'Terminado' ? (
-        <div className="flex-none pt-4 border-t border-white/10 mt-auto">
+        <div className="flex-none pt-2 pb-4 sm:pb-0 mt-auto bg-background/95">
             <div className="flex gap-2">
                 <Textarea
                     placeholder={ticket.status === 'Espera de aprobación' ? "Explica el motivo (Si rechazas) o agradece (Si apruebas)..." : "Responde al técnico o agrega detalles..."}
-                    className="resize-none min-h-[60px] bg-black/20 border-white/10 text-sm py-3"
+                    className="resize-none min-h-[60px] bg-black/40 border-white/10 text-base sm:text-sm py-3 rounded-xl focus:ring-1 focus:ring-primary/50"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => {
@@ -594,7 +608,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                         }
                     }}
                 />
-                <Button onClick={sendMessage} disabled={!newMessage.trim() || sending} className="h-auto shrink-0 bg-primary/20 text-primary hover:bg-primary hover:text-white transition-colors">
+                <Button onClick={sendMessage} disabled={!newMessage.trim() || sending} className="h-auto shrink-0 bg-primary/20 text-primary hover:bg-primary hover:text-white transition-colors rounded-xl px-4">
                     {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 </Button>
             </div>

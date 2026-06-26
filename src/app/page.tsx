@@ -22,25 +22,26 @@ export default function Home() {
 
       {/* Modern Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/60 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-3 md:px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-2 md:gap-3">
             <Image 
               src="https://github.com/Tino0rcg/fotos-Onlinedesk/blob/main/ChatGPT%20Image%2026%20jun%202026%2C%2002_08_41%20a.m..png?raw=true" 
               alt="OnlineDesk Logo" 
               width={80} 
               height={80}
-              className="object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+              className="object-contain w-[50px] h-[50px] md:w-[80px] md:h-[80px] drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"
             />
             <div className="flex flex-col">
-              <span className="text-2xl font-black tracking-tighter text-white uppercase italic leading-none">OnlineDesk</span>
-              <span className="text-[9px] font-bold tracking-[0.2em] text-blue-400 uppercase leading-none mt-1">by Online System</span>
+              <span className="text-lg md:text-2xl font-black tracking-tighter text-white uppercase italic leading-none">OnlineDesk</span>
+              <span className="text-[7px] md:text-[9px] font-bold tracking-[0.2em] text-blue-400 uppercase leading-none mt-1">by Online System</span>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <Link href="/login">
-              <Button className="rounded-full bg-white text-black hover:bg-blue-50 hover:text-blue-600 hover:scale-105 font-bold px-7 shadow-[0_0_20px_rgba(255,255,255,0.15)] transition-all duration-300 group">
-                Ingresar al Portal
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              <Button className="rounded-full bg-white text-black hover:bg-blue-50 hover:text-blue-600 hover:scale-105 font-bold px-4 md:px-7 text-xs md:text-sm h-8 md:h-10 shadow-[0_0_20px_rgba(255,255,255,0.15)] transition-all duration-300 group">
+                <span className="hidden sm:inline">Ingresar al Portal</span>
+                <span className="sm:hidden">Ingresar</span>
+                <ArrowRight className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </div>

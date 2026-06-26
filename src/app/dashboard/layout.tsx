@@ -44,10 +44,12 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { Logo } from "@/components/logo";
 import { UserNav } from "@/components/user-nav";
 import { NavLinks } from "@/components/dashboard/nav-links";
+import { PullToRefresh } from "@/components/ui/pull-to-refresh";
+import { PushManager } from "@/components/push-manager";
 
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 
@@ -126,6 +128,7 @@ export default async function DashboardLayout({
                             </Button>
                         </SheetTrigger>
                         <SheetContent side="left" className="sm:max-w-xs">
+                            <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
                             <nav className="grid gap-6 text-lg font-medium">
                                 <Link
                                     href="#"
@@ -134,15 +137,17 @@ export default async function DashboardLayout({
                                     <Ticket className="h-5 w-5 transition-all group-hover:scale-110" />
                                     <span className="sr-only">OnlineDesk</span>
                                 </Link>
-                                <Link
-                                    href="/dashboard/tickets/new"
-                                    className="flex items-center gap-4 px-2.5 text-primary"
-                                >
-                                    <PlusCircle className="h-5 w-5" />
-                                    Nuevo Requerimiento
-                                </Link>
+                                <SheetClose asChild>
+                                    <Link
+                                        href="/dashboard/tickets/new"
+                                        className="flex items-center gap-4 px-2.5 text-primary"
+                                    >
+                                        <PlusCircle className="h-5 w-5" />
+                                        Nuevo Requerimiento
+                                    </Link>
+                                </SheetClose>
                                 <div className="flex flex-col gap-2 mt-4">
-                                    <NavLinks role={userData.role} />
+                                    <NavLinks role={userData.role} isMobile={true} />
                                 </div>
                             </nav>
                         </SheetContent>
@@ -154,8 +159,11 @@ export default async function DashboardLayout({
                     </div>
                     <UserNav user={userData} />
                 </header>
-                <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-                    {children}
+                <main className="flex flex-col flex-1 w-full min-w-0 gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+                    <PushManager />
+                    <PullToRefresh>
+                        {children}
+                    </PullToRefresh>
                 </main>
             </div>
         </div>

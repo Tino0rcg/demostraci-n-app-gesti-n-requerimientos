@@ -11,8 +11,9 @@ import {
     Archive,
     BriefcaseBusiness,
 } from "lucide-react";
+import { SheetClose } from "@/components/ui/sheet";
 
-export function NavLinks({ role }: { role?: string }) {
+export function NavLinks({ role, isMobile }: { role?: string, isMobile?: boolean }) {
     const pathname = usePathname();
 
     const allItems = [
@@ -75,7 +76,7 @@ export function NavLinks({ role }: { role?: string }) {
                     ? pathname === "/dashboard" 
                     : pathname?.startsWith(item.href!);
 
-                return (
+                const linkElement = (
                     <Link
                         key={index}
                         href={item.href!}
@@ -88,7 +89,17 @@ export function NavLinks({ role }: { role?: string }) {
                         <Icon className="h-5 w-5" />
                         <span>{item.name}</span>
                     </Link>
-                )
+                );
+
+                if (isMobile) {
+                    return (
+                        <SheetClose asChild key={index}>
+                            {linkElement}
+                        </SheetClose>
+                    );
+                }
+                
+                return linkElement;
             })}
         </>
     );

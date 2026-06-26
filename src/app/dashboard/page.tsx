@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import { Clock, AlertCircle, Loader2, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { TicketDetailsInfo } from "@/components/dashboard/ticket-details-info";
 import { getSlaStatus } from "@/lib/sla-utils";
 import React, { useEffect, useState, useCallback } from "react";
@@ -173,9 +173,9 @@ export default function DashboardRootPage() {
             {/* Mobile/Tablet View: Tabs Layout */}
             <div className="lg:hidden flex flex-col h-full">
                 <Tabs defaultValue="Ingresado" className="w-full">
-                    <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 bg-black/40 border border-white/10 p-1 mb-4">
+                    <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 bg-black/40 border border-white/10 p-1 mb-4 h-auto gap-1">
                         {COLUMNS.map(col => (
-                            <TabsTrigger key={col} value={col} className="text-[10px] font-bold uppercase tracking-wider">
+                            <TabsTrigger key={col} value={col} className="text-[10px] font-bold uppercase tracking-wider h-auto py-2 whitespace-normal text-center">
                                 {col} ({tickets.filter(t => t.status === col).length})
                             </TabsTrigger>
                         ))}
@@ -202,8 +202,9 @@ export default function DashboardRootPage() {
 
             <Sheet open={!!selectedId} onOpenChange={(val) => !val && setSelectedId(null)}>
                 <SheetContent className="sm:max-w-md md:max-w-2xl glass-panel border-l-primary/20 p-0 overflow-hidden">
+                    <SheetTitle className="sr-only">Detalles del Requerimiento</SheetTitle>
                     {selectedId && (
-                        <div className="h-full overflow-y-auto custom-scrollbar p-6 pt-10">
+                        <div className="h-full flex flex-col p-3 pt-8 sm:p-6 sm:pt-10">
                             <TicketDetailsInfo ticketId={selectedId} onUpdate={handleUpdate} />
                         </div>
                     )}

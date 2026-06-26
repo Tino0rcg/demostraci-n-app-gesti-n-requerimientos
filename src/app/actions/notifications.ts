@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import { TicketPDF } from "@/components/pdf/ticket-pdf";
 import { createClient } from "@/lib/supabase/server";
 import { Ticket, User, Note } from "@/lib/definitions";
+import { sendPushToUser } from "./push";
 
 const transporter = nodemailer.createTransport({
     host: 'smtp-relay.brevo.com',
@@ -113,6 +114,17 @@ export async function sendTicketNotification(ticketId: string, actionType: strin
                 }
             ]
         });
+
+        // 5. Enviar Notificación Web Push Móvil
+        const targetId = targetRole === 'assignee' ? ticket.assigneeId : ticket.submitterId;
+        if (targetId) {
+            await sendPushToUser(
+                targetId,
+                `Actualización: ${ticket.subject.substring(0, 30)}...`,
+                `Nuevo evento: ${actionType}`,
+                `/dashboard/tickets`
+            );
+        }
 
         return { success: true };
     } catch (error) {
