@@ -6,14 +6,35 @@ import { TicketPDF } from "@/components/pdf/ticket-pdf";
 import { createClient } from "@/lib/supabase/server";
 import { Ticket, User, Note } from "@/lib/definitions";
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
-    auth: {
-        user: process.env.BREVO_SMTP_LOGIN || 'test',
-        pass: process.env.BREVO_SMTP_KEY || 'test',
+function getEmailTransporter() {
+    const user = process.env.SMTP_USER || process.env.GMAIL_USER || process.env.BREVO_SMTP_LOGIN || 'requerimientosgestion@gmail.com';
+    const rawPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || process.env.BREVO_SMTP_KEY || 'fjblojakqahobnvq';
+    const pass = rawPass ? rawPass.replace(/\s+/g, '') : '';
+    const from = process.env.SMTP_FROM || `"Soporte OnlineDesk" <${user}>`;
+
+    if (user.includes('@gmail.com') || process.env.SMTP_SERVICE === 'gmail') {
+        return {
+            transporter: nodemailer.createTransport({
+                service: 'gmail',
+                auth: { user, pass }
+            }),
+            from,
+            user,
+            pass
+        };
     }
-});
+
+    return {
+        transporter: nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+            port: Number(process.env.SMTP_PORT) || 587,
+            auth: { user, pass }
+        }),
+        from,
+        user,
+        pass
+    };
+}
 
 export async function sendTicketNotification(ticketId: string, actionType: string, targetRole: 'submitter' | 'assignee' = 'submitter') {
     try {
@@ -72,20 +93,22 @@ export async function sendTicketNotification(ticketId: string, actionType: strin
 
         const targetEmail = targetRole === 'assignee' ? assignee?.email : submitter?.email;
         const targetName = targetRole === 'assignee' ? assignee?.name : submitter?.name;
-        // 3. Evaluar configuración de Brevo
-        if (!process.env.BREVO_SMTP_KEY || process.env.BREVO_SMTP_KEY === 'test') {
+        // 3. Obtener transporte y configuración de correo
+        const { transporter, from, user: emailUser, pass: emailPass } = getEmailTransporter();
+
+        if (!emailPass || emailPass === 'test') {
             console.log("\n================ [ ENTORNO LOCAL / MOCK ] ================");
-            console.log(`📡 BREVO EMAIL SIMULATION -> ${actionType}`);
+            console.log(`📡 EMAIL SIMULATION -> ${actionType}`);
             console.log(`📩 Destino: ${targetEmail}`);
             console.log(`📎 Adjunto PDF Listo: Trazabilidad_${ticket.codigo || ticket.id.substring(0,8)}.pdf (${(pdfBuffer.length / 1024).toFixed(2)} KB)`);
             console.log("========================================================\n");
             return { success: true, simulated: true };
         }
 
-        // 4. Despacho real con Brevo SMTP
+        // 4. Despacho real con Nodemailer
         await transporter.sendMail({
-            from: `"Soporte OnlineDesk" <${process.env.BREVO_EMAIL}>`,
-            to: targetEmail || process.env.BREVO_EMAIL,
+            from: from,
+            to: targetEmail || emailUser,
             subject: `[Ticket ${ticket.codigo || ticket.id.substring(0,8).toUpperCase()}] Actualización: ${actionType}`,
             html: `
                 <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e4e4e7; border-radius: 8px; overflow: hidden;">
@@ -116,7 +139,7 @@ export async function sendTicketNotification(ticketId: string, actionType: strin
 
         return { success: true };
     } catch (error) {
-        console.error("Error al procesar la notificación Brevo PDF:", error);
+        console.error("Error al procesar la notificación de correo:", error);
         return { success: false, error: String(error) };
     }
 }
