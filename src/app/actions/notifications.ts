@@ -3,8 +3,15 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import nodemailer from "nodemailer";
 import { TicketPDF } from "@/components/pdf/ticket-pdf";
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseJS } from '@supabase/supabase-js';
 import { Ticket, User, Note } from "@/lib/definitions";
+
+function createAdminClient() {
+    return createSupabaseJS(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+}
 
 function getEmailTransporter() {
     const user = process.env.SMTP_USER || process.env.GMAIL_USER || process.env.BREVO_SMTP_LOGIN || 'requerimientosgestion@gmail.com';
@@ -38,7 +45,7 @@ function getEmailTransporter() {
 
 export async function sendTicketNotification(ticketId: string, actionType: string, targetRole: 'submitter' | 'assignee' = 'submitter') {
     try {
-        const supabase = await createClient();
+        const supabase = createAdminClient();
 
         // 1. Recopilar info desde la BD
         const { data: ticketData, error: ticketError } = await supabase
