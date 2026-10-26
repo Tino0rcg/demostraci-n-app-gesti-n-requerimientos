@@ -211,13 +211,13 @@ export default function NewTicketPage() {
                                         onChange={handleImageChange}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                     />
-                                    <div className="border-2 border-dashed border-white/10 rounded-xl p-8 flex flex-col items-center justify-center gap-3 bg-white/5 hover:bg-white/10 transition-all group">
+                                    <div className="border-2 border-dashed border-white/10 rounded-xl p-6 sm:p-8 flex flex-col items-center justify-center gap-3 bg-white/5 hover:bg-white/10 transition-all group">
                                         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                                             <ImagePlus className="h-6 w-6 text-primary" />
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-sm font-bold text-white">Haz clic o arrastra una imagen</p>
-                                            <p className="text-xs text-zinc-500 mt-1 uppercase tracking-widest font-mono">PNG, JPG hasta 5MB</p>
+                                            <p className="text-sm font-bold text-white">Toca o arrastra una imagen o captura</p>
+                                            <p className="text-xs text-zinc-500 mt-1 uppercase tracking-widest font-mono">PNG, JPG hasta 5MB (Cámara o Galería)</p>
                                         </div>
                                     </div>
                                 </div>
@@ -228,17 +228,15 @@ export default function NewTicketPage() {
                                         alt="Preview" 
                                         className="w-full h-full object-contain"
                                     />
-                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <Button 
-                                            type="button"
-                                            variant="destructive" 
-                                            size="sm" 
-                                            onClick={removeImage}
-                                            className="font-bold uppercase tracking-tighter"
-                                        >
-                                            <X className="w-4 h-4 mr-2" /> Eliminar Imagen
-                                        </Button>
-                                    </div>
+                                    <Button 
+                                        type="button"
+                                        variant="destructive" 
+                                        size="sm" 
+                                        onClick={removeImage}
+                                        className="absolute top-3 right-3 font-bold uppercase tracking-tighter shadow-lg min-h-[36px] z-20"
+                                    >
+                                        <X className="w-4 h-4 mr-1 sm:mr-2" /> Eliminar
+                                    </Button>
                                     <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-md px-2 py-1 rounded text-[10px] text-white flex items-center gap-1 border border-white/10 uppercase font-bold tracking-widest">
                                         <ImageIcon className="w-3 h-3 text-primary" />
                                         Vista Previa Seleccionada
@@ -259,11 +257,11 @@ export default function NewTicketPage() {
                             />
                         </div>
                     </CardContent>
-                    <CardFooter className="flex flex-col sm:flex-row gap-3 sm:justify-between border-t border-white/5 pt-6 bg-white/5">
-                        <Button variant="ghost" asChild className="w-full sm:w-auto text-zinc-400 hover:text-white hover:bg-white/5">
+                    <CardFooter className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between border-t border-white/5 pt-6 bg-white/5">
+                        <Button variant="ghost" asChild className="w-full sm:w-auto min-h-[44px] text-zinc-400 hover:text-white hover:bg-white/5">
                             <Link href="/dashboard">Cancelar</Link>
                         </Button>
-                        <Button type="submit" disabled={submitting} className="w-full sm:min-w-[180px] bg-primary hover:bg-primary/90 text-black font-black uppercase italic tracking-tighter shadow-[0_0_20px_rgba(59,130,246,0.2)]">
+                        <Button type="submit" disabled={submitting} className="w-full sm:min-w-[180px] min-h-[44px] bg-primary hover:bg-primary/90 text-black font-black uppercase italic tracking-tighter shadow-[0_0_20px_rgba(59,130,246,0.2)]">
                             {submitting ? (
                                 <div className="flex items-center gap-2">
                                     <div className="h-4 w-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />

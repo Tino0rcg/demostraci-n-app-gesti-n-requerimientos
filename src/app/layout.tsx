@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { Toaster } from '@/components/ui/toaster';
@@ -6,9 +6,23 @@ import { Toaster } from '@/components/ui/toaster';
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#09090b",
+};
+
 export const metadata: Metadata = {
-  title: "Sistema de gestion para requerimientos",
-  description: "Plataforma de gestión de requerimientos contractuales de última generación",
+  title: "OnlineDesk - Gestión de Requerimientos",
+  description: "Plataforma de soporte y gestión de requerimientos contractuales de última generación",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "OnlineDesk",
+  },
 };
 
 export default function RootLayout({

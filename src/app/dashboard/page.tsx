@@ -201,7 +201,7 @@ export default function DashboardRootPage() {
             </div>
 
             <Sheet open={!!selectedId} onOpenChange={(val) => !val && setSelectedId(null)}>
-                <SheetContent className="sm:max-w-md md:max-w-2xl glass-panel border-l-primary/20 p-0 overflow-hidden">
+                <SheetContent className="w-full max-w-none sm:max-w-md md:max-w-2xl glass-panel border-l-primary/20 p-0 overflow-hidden">
                     <SheetTitle className="sr-only">Detalles del Requerimiento</SheetTitle>
                     {selectedId && (
                         <div className="h-full flex flex-col p-3 pt-8 sm:p-6 sm:pt-10">

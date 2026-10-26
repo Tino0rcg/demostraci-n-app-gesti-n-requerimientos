@@ -222,140 +222,216 @@ export default function TecnicosPage() {
                     </div>
                 </div>
             )}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Técnicos y Especialistas</h1>
-                    <p className="text-muted-foreground mt-1">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Técnicos y Especialistas</h1>
+                    <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
                         Administra el equipo de soporte interno y su volumen de trabajo.
                     </p>
                 </div>
-                <Button onClick={handleOpenCreate} className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+                <Button onClick={handleOpenCreate} className="gap-2 bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto shrink-0 shadow-md">
                     <PlusCircle className="h-4 w-4" />
                     Nuevo Técnico
                 </Button>
             </div>
 
-            <Card className="glass-card border-none">
-                <CardHeader>
-                    <div className="flex justify-between items-center">
+            <Card className="glass-card border-none overflow-hidden">
+                <CardHeader className="p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                         <div className="space-y-1">
-                            <CardTitle>Equipo de Resolución</CardTitle>
-                            <CardDescription>Técnicos operativos dentro del sistema Vanguardia.</CardDescription>
+                            <CardTitle className="text-lg sm:text-xl">Equipo de Resolución</CardTitle>
+                            <CardDescription className="text-xs sm:text-sm">Técnicos operativos dentro del sistema Vanguardia.</CardDescription>
                         </div>
-                        <div className="relative w-64">
+                        <div className="relative w-full sm:w-64">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input 
                                 placeholder="Buscar especialista..." 
-                                className="pl-8 bg-black/20 border-white/10 text-white"
+                                className="pl-8 bg-black/20 border-white/10 text-white w-full"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="border-white/10">
-                                <TableHead>Técnico</TableHead>
-                                <TableHead>Especialidad</TableHead>
-                                <TableHead>Carga Actual (Tickets)</TableHead>
-                                <TableHead>Calificación CSAT</TableHead>
-                                <TableHead>Disponibilidad</TableHead>
-                                <TableHead className="text-right">Acciones</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredTecnicos.map((tec) => (
-                                <TableRow key={tec.id} className="border-white/5 hover:bg-white/5">
-                                    <TableCell className="font-medium flex items-center gap-3">
-                                        <Avatar className="h-8 w-8 border border-white/10">
-                                            <AvatarFallback className="bg-blue-500/20 text-blue-400">
+                <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+                    {/* Mobile Card List (< md:) */}
+                    <div className="md:hidden space-y-3">
+                        {filteredTecnicos.map((tec) => (
+                            <div key={tec.id} className="p-4 rounded-xl border border-white/5 bg-black/40 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-10 w-10 border border-white/10">
+                                            <AvatarFallback className="bg-blue-500/20 text-blue-400 font-bold">
                                                 {(tec.name || "U").charAt(0)}
                                             </AvatarFallback>
                                         </Avatar>
                                         <div>
-                                            <p className="font-medium text-sm text-white leading-none">{tec.name}</p>
-                                            <p className="text-[10px] text-muted-foreground mt-1 uppercase font-mono">{tec.email}</p>
+                                            <p className="font-bold text-sm text-white leading-tight">{tec.name}</p>
+                                            <p className="text-[11px] text-muted-foreground mt-0.5 truncate max-w-[170px]">{tec.email}</p>
                                         </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2 text-muted-foreground">
-                                            <Wrench className="h-3 w-3 "/>
-                                            <span>{tec.specialty || "General"}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className="bg-zinc-800 text-zinc-300 border-zinc-700">
-                                            0 asignados
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-1.5 text-yellow-500">
-                                            <Star className="h-4 w-4 fill-current" />
-                                            <span className="text-sm font-bold text-white">{tec.rating ? Number(tec.rating).toFixed(1) : "5.0"}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className={
-                                            tec.role === 'Administrador Full' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 
-                                            'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                        }>
-                                            {tec.role || 'Técnico'}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className={
-                                            tec.status === 'Disponible' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 
-                                            tec.status === 'En Terreno' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : 
-                                            'bg-red-500/20 text-red-400 border-red-500/30'
-                                        }>
-                                            {tec.status || 'Disponible'}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu modal={false}>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="hover:text-white">
-                                                    <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10 text-white">
-                                                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                                <DropdownMenuSeparator className="bg-white/5" />
-                                                <DropdownMenuItem 
-                                                    className="gap-2 cursor-pointer" 
-                                                    onSelect={() => {
-                                                        setViewingTech(tec);
-                                                        setSheetMode('view');
-                                                        setIsSheetOpen(true);
-                                                    }}
-                                                >
-                                                    <Eye className="h-4 w-4" /> Ver Perfil
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem 
-                                                    className="gap-2 cursor-pointer" 
-                                                    onSelect={() => {
-                                                        handleOpenEdit(tec);
-                                                    }}
-                                                >
-                                                    <Pencil className="h-4 w-4" /> Editar
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem 
-                                                    className="gap-2 cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-400/10" 
-                                                    onSelect={() => {
-                                                        setTechToDelete(tec);
-                                                    }}
-                                                >
-                                                    <Trash2 className="h-4 w-4" /> Eliminar
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
+                                    </div>
+                                    <DropdownMenu modal={false}>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="hover:text-white h-8 w-8">
+                                                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10 text-white">
+                                            <DropdownMenuItem onSelect={() => { setViewingTech(tec); setSheetMode('view'); setIsSheetOpen(true); }} className="gap-2 cursor-pointer">
+                                                <Eye className="h-4 w-4" /> Ver Perfil
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleOpenEdit(tec)} className="gap-2 cursor-pointer">
+                                                <Pencil className="h-4 w-4" /> Editar
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => setTechToDelete(tec)} className="gap-2 cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-400/10">
+                                                <Trash2 className="h-4 w-4" /> Eliminar
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs pt-2 border-t border-white/5">
+                                    <div className="flex items-center gap-1.5 text-zinc-400">
+                                        <Wrench className="h-3.5 w-3.5 text-primary" />
+                                        <span>{tec.specialty || "General"}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-yellow-500 font-bold">
+                                        <Star className="h-3.5 w-3.5 fill-current" />
+                                        <span>{tec.rating ? Number(tec.rating).toFixed(1) : "5.0"}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-1">
+                                    <Badge variant="outline" className={
+                                        tec.status === 'Disponible' ? 'bg-green-500/20 text-green-400 border-green-500/30 text-[10px]' : 
+                                        tec.status === 'En Terreno' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30 text-[10px]' : 
+                                        'bg-red-500/20 text-red-400 border-red-500/30 text-[10px]'
+                                    }>
+                                        {tec.status || 'Disponible'}
+                                    </Badge>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => { setViewingTech(tec); setSheetMode('view'); setIsSheetOpen(true); }}
+                                        className="h-7 text-xs border-white/10 hover:bg-white/10"
+                                    >
+                                        Ver Ficha
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                        {filteredTecnicos.length === 0 && (
+                            <div className="p-8 text-center text-zinc-500 text-xs border border-dashed border-white/10 rounded-xl">
+                                No se encontraron técnicos registrados.
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Desktop Table View (md+) */}
+                    <div className="hidden md:block">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="border-white/10">
+                                    <TableHead>Técnico</TableHead>
+                                    <TableHead>Especialidad</TableHead>
+                                    <TableHead>Carga Actual (Tickets)</TableHead>
+                                    <TableHead>Calificación CSAT</TableHead>
+                                    <TableHead>Disponibilidad</TableHead>
+                                    <TableHead className="text-right">Acciones</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredTecnicos.map((tec) => (
+                                    <TableRow key={tec.id} className="border-white/5 hover:bg-white/5">
+                                        <TableCell className="font-medium flex items-center gap-3">
+                                            <Avatar className="h-8 w-8 border border-white/10">
+                                                <AvatarFallback className="bg-blue-500/20 text-blue-400">
+                                                    {(tec.name || "U").charAt(0)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-medium text-sm text-white leading-none">{tec.name}</p>
+                                                <p className="text-[10px] text-muted-foreground mt-1 uppercase font-mono">{tec.email}</p>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Wrench className="h-3 w-3 "/>
+                                                <span>{tec.specialty || "General"}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className="bg-zinc-800 text-zinc-300 border-zinc-700">
+                                                0 asignados
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-1.5 text-yellow-500">
+                                                <Star className="h-4 w-4 fill-current" />
+                                                <span className="text-sm font-bold text-white">{tec.rating ? Number(tec.rating).toFixed(1) : "5.0"}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className={
+                                                tec.role === 'Administrador Full' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 
+                                                'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                            }>
+                                                {tec.role || 'Técnico'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className={
+                                                tec.status === 'Disponible' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 
+                                                tec.status === 'En Terreno' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : 
+                                                'bg-red-500/20 text-red-400 border-red-500/30'
+                                            }>
+                                                {tec.status || 'Disponible'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu modal={false}>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="hover:text-white">
+                                                        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10 text-white">
+                                                    <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                                    <DropdownMenuSeparator className="bg-white/5" />
+                                                    <DropdownMenuItem 
+                                                        className="gap-2 cursor-pointer" 
+                                                        onSelect={() => {
+                                                            setViewingTech(tec);
+                                                            setSheetMode('view');
+                                                            setIsSheetOpen(true);
+                                                        }}
+                                                    >
+                                                        <Eye className="h-4 w-4" /> Ver Perfil
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem 
+                                                        className="gap-2 cursor-pointer" 
+                                                        onSelect={() => {
+                                                            handleOpenEdit(tec);
+                                                        }}
+                                                    >
+                                                        <Pencil className="h-4 w-4" /> Editar
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem 
+                                                        className="gap-2 cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-400/10" 
+                                                        onSelect={() => {
+                                                            setTechToDelete(tec);
+                                                        }}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" /> Eliminar
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
 

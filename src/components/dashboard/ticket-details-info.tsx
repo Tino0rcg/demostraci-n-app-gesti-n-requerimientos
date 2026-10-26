@@ -392,7 +392,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
         })()}
       </SheetHeader>
 
-      <ScrollArea className="flex-1 pr-4 mr-[-16px]">
+      <ScrollArea className="flex-1 pr-1 sm:pr-4">
         <div className="flex flex-col min-h-full pb-8">
             {/* Controles de Ticket permanentemente visibles */}
             <div className="w-full mb-4">
@@ -408,31 +408,30 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
         <h4 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Flujo de Trabajo Operativo</h4>
         <div className="flex flex-wrap gap-2">
             {ticket.status === 'Ingresado' && (currentUserProfile?.role === 'Técnico' || currentUserProfile?.role === 'Administrador Full') && (
-                <Button disabled={isUpdating} onClick={() => handleAction('En proceso', 'Ticket marcado como "En Proceso" por el técnico. Comenzando a trabajar en la solución.')} size="sm" className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30">
+                <Button disabled={isUpdating} onClick={() => handleAction('En proceso', 'Ticket marcado como "En Proceso" por el técnico. Comenzando a trabajar en la solución.')} className="w-full sm:w-auto min-h-[44px] text-xs sm:text-sm font-semibold bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30">
                     <Play className="w-4 h-4 mr-2" /> Iniciar Trabajo (Agente)
                 </Button>
             )}
             
             {ticket.status === 'En proceso' && (currentUserProfile?.role === 'Técnico' || currentUserProfile?.role === 'Administrador Full') && (
-                <Button disabled={isUpdating} onClick={() => handleAction('Espera de aprobación', 'Trabajo finalizado por el técnico. Enviado al cliente para revisión y control de calidad.')} size="sm" className="bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30">
+                <Button disabled={isUpdating} onClick={() => handleAction('Espera de aprobación', 'Trabajo finalizado por el técnico. Enviado al cliente para revisión y control de calidad.')} className="w-full sm:w-auto min-h-[44px] text-xs sm:text-sm font-semibold bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30">
                     <AlertCircle className="w-4 h-4 mr-2" /> Enviar a Revisión (Al Cliente)
                 </Button>
             )}
 
             {ticket.status === 'Espera de aprobación' && (currentUserProfile?.id === ticket.submitterId) && (
-                <>
-                    <Button disabled={isUpdating} onClick={() => handleAction('Terminado', 'Solución validada y aceptada por el cliente. Ticket cerrado exitosamente.')} size="sm" className="bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                    <Button disabled={isUpdating} onClick={() => handleAction('Terminado', 'Solución validada y aceptada por el cliente. Ticket cerrado exitosamente.')} className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30">
                         <CheckCircle2 className="w-4 h-4 mr-2" /> Aprobar Solución
                     </Button>
-                    <div className="group relative">
+                    <div className="group relative w-full">
                         <Button 
                             disabled={!newMessage.trim() || isUpdating} 
                             onClick={() => {
                                 handleAction('En proceso', `Solución RECHAZADA por el cliente. Motivo: ${newMessage}`);
                                 setNewMessage(""); // Limpiar caja después
                             }} 
-                            size="sm" 
-                            className="bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 disabled:opacity-50"
+                            className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 disabled:opacity-50"
                         >
                             <XCircle className="w-4 h-4 mr-2" /> Rechazar Solución
                         </Button>
@@ -442,7 +441,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                             </span>
                         )}
                     </div>
-                </>
+                </div>
             )}
 
             {ticket.status === 'Terminado' && (
@@ -594,11 +593,11 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
 
       {/* Input de Mensajes */}
       {ticket.status !== 'Terminado' ? (
-        <div className="flex-none pt-2 pb-4 sm:pb-0 mt-auto bg-background/95">
-            <div className="flex gap-2">
+        <div className="flex-none pt-2 pb-safe sm:pb-0 mt-auto bg-background/95">
+            <div className="flex gap-2 items-center">
                 <Textarea
                     placeholder={ticket.status === 'Espera de aprobación' ? "Explica el motivo (Si rechazas) o agradece (Si apruebas)..." : "Responde al técnico o agrega detalles..."}
-                    className="resize-none min-h-[60px] bg-black/40 border-white/10 text-base sm:text-sm py-3 rounded-xl focus:ring-1 focus:ring-primary/50"
+                    className="resize-none min-h-[50px] max-h-[120px] bg-black/40 border-white/10 text-base sm:text-sm py-3 rounded-xl focus:ring-1 focus:ring-primary/50"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => {
@@ -608,16 +607,16 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                         }
                     }}
                 />
-                <Button onClick={sendMessage} disabled={!newMessage.trim() || sending} className="h-auto shrink-0 bg-primary/20 text-primary hover:bg-primary hover:text-white transition-colors rounded-xl px-4">
+                <Button onClick={sendMessage} disabled={!newMessage.trim() || sending} className="h-12 w-12 shrink-0 bg-primary/20 text-primary hover:bg-primary hover:text-white transition-colors rounded-xl p-0 flex items-center justify-center">
                     {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 </Button>
             </div>
         </div>
       ) : (
-        <div className="flex-none pt-4 border-t border-white/10 mt-auto">
+        <div className="flex-none pt-4 pb-safe sm:pb-0 border-t border-white/10 mt-auto">
             <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 flex items-center justify-center gap-3">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm font-bold text-emerald-400 uppercase tracking-widest italic">
+                <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+                <span className="text-xs sm:text-sm font-bold text-emerald-400 uppercase tracking-widest italic text-center">
                     Ticket Finalizado y Almacenado en Historial
                 </span>
             </div>

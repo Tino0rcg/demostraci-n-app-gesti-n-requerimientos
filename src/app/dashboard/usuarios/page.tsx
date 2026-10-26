@@ -246,40 +246,118 @@ export default function UsuariosPage() {
                     </div>
                 </div>
             )}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-white uppercase italic">Gestión de Usuarios</h1>
-                    <p className="text-muted-foreground mt-1 text-sm">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white uppercase italic">Gestión de Usuarios</h1>
+                    <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
                         Controla el acceso de clientes y administradores a la plataforma.
                     </p>
                 </div>
-                <Button onClick={handleOpenCreate} className="gap-2 bg-primary hover:bg-primary/90 text-black font-bold">
+                <Button onClick={handleOpenCreate} className="gap-2 bg-primary hover:bg-primary/90 text-black font-bold w-full sm:w-auto shrink-0 shadow-md">
                     <PlusCircle className="h-4 w-4" />
                     Nuevo Usuario
                 </Button>
             </div>
 
-            <Card className="glass-card border-white/5 bg-black/40">
-                <CardHeader>
-                    <div className="flex justify-between items-center">
+            <Card className="glass-card border-white/5 bg-black/40 overflow-hidden">
+                <CardHeader className="p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                         <div className="space-y-1">
-                            <CardTitle className="text-white">Directorio de Accesos</CardTitle>
-                            <CardDescription>Usuarios vinculados a empresas clientes o staff interno.</CardDescription>
+                            <CardTitle className="text-lg sm:text-xl text-white">Directorio de Accesos</CardTitle>
+                            <CardDescription className="text-xs sm:text-sm">Usuarios vinculados a empresas clientes o staff interno.</CardDescription>
                         </div>
-                        <div className="relative w-64">
+                        <div className="relative w-full sm:w-64">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input 
                                 placeholder="Nombre, email o empresa..." 
-                                className="pl-8 bg-black/20 border-white/10 text-white placeholder:text-zinc-600"
+                                className="pl-8 bg-black/20 border-white/10 text-white placeholder:text-zinc-600 w-full"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader className="bg-white/5">
+                <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+                    {/* Mobile Card List (< md:) */}
+                    <div className="md:hidden space-y-3">
+                        {filteredUsuarios.map((user) => (
+                            <div key={user.id} className="p-4 rounded-xl border border-white/5 bg-black/40 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-10 w-10 border border-primary/20">
+                                            <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                                                {(user.name || "U").charAt(0).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="font-bold text-sm text-white leading-tight">{user.name}</p>
+                                            <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[170px]">{user.email}</p>
+                                        </div>
+                                    </div>
+                                    <DropdownMenu modal={false}>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="hover:text-white h-8 w-8">
+                                                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10 text-white">
+                                            <DropdownMenuItem onSelect={() => { setViewingUser(user); setSheetMode('view'); setIsSheetOpen(true); }} className="gap-2 cursor-pointer">
+                                                <Eye className="h-4 w-4" /> Ver Perfil
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleOpenEdit(user)} className="gap-2 cursor-pointer">
+                                                <Pencil className="h-4 w-4" /> Editar
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => setUserToDelete(user)} className="gap-2 cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-400/10">
+                                                <Trash2 className="h-4 w-4" /> Eliminar
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs pt-2 border-t border-white/5">
+                                    <div className="flex items-center gap-1.5 text-zinc-400">
+                                        <Building className="h-3.5 w-3.5 text-primary" />
+                                        <span>{user.company_name || 'Interno'}</span>
+                                    </div>
+                                    <Badge variant="outline" className={
+                                        user.role === 'Administrador Full' ? 'bg-red-500/10 text-red-400 border-red-500/20 text-[10px]' : 
+                                        user.role === 'Administrador Cliente' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px]' : 
+                                        user.role === 'Técnico' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px]' : 
+                                        'bg-zinc-500/10 text-zinc-400 border-zinc-500/20 text-[10px]'
+                                    }>
+                                        {user.role}
+                                    </Badge>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-1">
+                                    <Badge variant="outline" className={
+                                        user.status === 'Disponible' ? 'bg-green-500/20 text-green-400 border-green-500/30 text-[10px]' : 
+                                        'bg-zinc-500/20 text-zinc-400 border-zinc-500/30 text-[10px]'
+                                    }>
+                                        {user.status || 'Disponible'}
+                                    </Badge>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => { setViewingUser(user); setSheetMode('view'); setIsSheetOpen(true); }}
+                                        className="h-7 text-xs border-white/10 hover:bg-white/10"
+                                    >
+                                        Ver Ficha
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                        {filteredUsuarios.length === 0 && (
+                            <div className="p-8 text-center text-zinc-500 text-xs border border-dashed border-white/10 rounded-xl">
+                                No se encontraron usuarios registrados.
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Desktop Table View (md+) */}
+                    <div className="hidden md:block">
+                        <Table>
+                            <TableHeader className="bg-white/5">
                             <TableRow className="border-white/10 hover:bg-transparent">
                                 <TableHead className="text-zinc-400">Usuario</TableHead>
                                 <TableHead className="text-zinc-400">Organización</TableHead>
@@ -369,6 +447,7 @@ export default function UsuariosPage() {
                             ))}
                         </TableBody>
                     </Table>
+                    </div>
                 </CardContent>
             </Card>
 

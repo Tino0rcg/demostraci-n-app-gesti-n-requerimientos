@@ -53,7 +53,7 @@ export default function LoginPage() {
             {/* Background Decor */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
             
-            <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-sm font-bold uppercase tracking-widest">
+            <Link href="/" className="absolute top-4 left-4 sm:top-8 sm:left-8 flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-xs sm:text-sm font-bold uppercase tracking-widest z-20">
                 <ArrowLeft className="h-4 w-4" />
                 Regresar
             </Link>
@@ -121,7 +121,7 @@ export default function LoginPage() {
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center p-2"
                                 >
                                     {showPassword ? (
                                         <EyeOff className="h-4 w-4" />

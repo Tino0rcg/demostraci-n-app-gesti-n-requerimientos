@@ -217,40 +217,110 @@ export default function ClientesPage() {
                     </div>
                 </div>
             )}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-white">Clientes y Empresas</h1>
-                    <p className="text-muted-foreground mt-1">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Clientes y Empresas</h1>
+                    <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
                         Gestiona las organizaciones y sus privilegios de acceso.
                     </p>
                 </div>
-                <Button onClick={handleOpenCreate} className="gap-2 bg-primary hover:bg-primary/90">
+                <Button onClick={handleOpenCreate} className="gap-2 bg-primary hover:bg-primary/90 w-full sm:w-auto shrink-0 shadow-md">
                     <PlusCircle className="h-4 w-4" />
                     Nueva Empresa
                 </Button>
             </div>
 
-            <Card className="glass-card border-white/5">
-                <CardHeader>
-                    <div className="flex justify-between items-center">
+            <Card className="glass-card border-white/5 overflow-hidden">
+                <CardHeader className="p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                         <div className="space-y-1">
-                            <CardTitle className="text-white">Listado de Empresas</CardTitle>
-                            <CardDescription>Empresas habilitadas para utilizar la plataforma.</CardDescription>
+                            <CardTitle className="text-lg sm:text-xl text-white">Listado de Empresas</CardTitle>
+                            <CardDescription className="text-xs sm:text-sm">Empresas habilitadas para utilizar la plataforma.</CardDescription>
                         </div>
-                        <div className="relative w-64">
+                        <div className="relative w-full sm:w-64">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input 
                                 placeholder="Buscar empresa o RUT..." 
-                                className="pl-8 bg-black/20 border-white/10" 
+                                className="pl-8 bg-black/20 border-white/10 w-full" 
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader className="bg-white/5">
+                <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+                    {/* Mobile Card List (< md:) */}
+                    <div className="md:hidden space-y-3">
+                        {filteredEmpresas.map((empresa) => (
+                            <div key={empresa.id} className="p-4 rounded-xl border border-white/5 bg-black/40 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-primary/10 rounded-lg border border-primary/20 shrink-0">
+                                            <Building2 className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-sm text-white leading-tight">{empresa.name}</p>
+                                            <p className="text-xs text-zinc-400 font-mono mt-0.5">{empresa.rut}</p>
+                                        </div>
+                                    </div>
+                                    <DropdownMenu modal={false}>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="hover:text-white h-8 w-8">
+                                                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10 text-white">
+                                            <DropdownMenuItem onSelect={() => { setViewingCompany(empresa); setSheetMode('view'); setIsSheetOpen(true); }} className="gap-2 cursor-pointer">
+                                                <Eye className="h-4 w-4" /> Ver Perfil
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleOpenEdit(empresa)} className="gap-2 cursor-pointer">
+                                                <Pencil className="h-4 w-4" /> Editar
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => setCompanyToDelete(empresa)} className="gap-2 cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-400/10">
+                                                <Trash2 className="h-4 w-4" /> Eliminar
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs pt-2 border-t border-white/5">
+                                    <Badge variant="outline" className="bg-white/5 border-white/10 text-zinc-300 text-[10px]">
+                                        Plan: {empresa.plan || 'Básico'}
+                                    </Badge>
+                                    <Badge variant="outline" className={
+                                        empresa.status === 'Activo' ? 'bg-green-500/10 text-green-400 border-green-500/20 text-[10px]' : 
+                                        'bg-zinc-500/10 text-zinc-400 border-zinc-500/20 text-[10px]'
+                                    }>
+                                        {empresa.status || 'Activo'}
+                                    </Badge>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-1">
+                                    <span className="text-[11px] text-zinc-500">
+                                        {empresa.user_count || 1} usuario(s) vinculados
+                                    </span>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => { setViewingCompany(empresa); setSheetMode('view'); setIsSheetOpen(true); }}
+                                        className="h-7 text-xs border-white/10 hover:bg-white/10"
+                                    >
+                                        Ver Ficha
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                        {filteredEmpresas.length === 0 && (
+                            <div className="p-8 text-center text-zinc-500 text-xs border border-dashed border-white/10 rounded-xl">
+                                No se encontraron empresas registradas.
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Desktop Table View (md+) */}
+                    <div className="hidden md:block">
+                        <Table>
+                            <TableHeader className="bg-white/5">
                             <TableRow className="hover:bg-transparent border-white/10">
                                 <TableHead className="text-zinc-400">Nombre de Empresa</TableHead>
                                 <TableHead className="text-zinc-400">RUT / ID</TableHead>
@@ -326,6 +396,7 @@ export default function ClientesPage() {
                             ))}
                         </TableBody>
                     </Table>
+                    </div>
                 </CardContent>
             </Card>
 

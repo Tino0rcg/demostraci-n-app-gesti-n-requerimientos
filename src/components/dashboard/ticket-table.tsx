@@ -9,6 +9,7 @@ import {
   Clock,
   AlertCircle,
   CheckCircle2,
+  ChevronRight,
 } from "lucide-react";
 import {
   ColumnDef,
@@ -82,7 +83,7 @@ export function TicketTable({ tickets, allUsers }: { tickets: Ticket[], allUsers
   const columns: ColumnDef<Ticket>[] = React.useMemo(() => [
     {
       accessorKey: "id",
-      header: <span className="hidden md:inline">Ticket ID</span>,
+      header: () => <span className="hidden md:inline">Ticket ID</span>,
       cell: ({ row }) => <Link href={`/dashboard/tickets`} className="hover:underline font-mono text-xs hidden md:inline">{row.getValue("id")}</Link>,
     },
     {
@@ -192,8 +193,8 @@ export function TicketTable({ tickets, allUsers }: { tickets: Ticket[], allUsers
 
   return (
     <div className="w-full min-w-0">
-      <div className="flex items-center py-4 gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center py-4 gap-3">
+        <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500" />
             <Input
             placeholder="Buscar tickets..."
@@ -201,13 +202,13 @@ export function TicketTable({ tickets, allUsers }: { tickets: Ticket[], allUsers
             onChange={(event) =>
                 table.getColumn("subject")?.setFilterValue(event.target.value)
             }
-            className="pl-10 glass-card bg-black/20 border-white/10"
+            className="pl-10 glass-card bg-black/20 border-white/10 w-full"
             />
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button id="columns-dropdown-trigger" variant="outline" className="ml-auto glass-card bg-black/20 border-white/10">
-              Columns <ChevronDown className="ml-2 h-4 w-4" />
+            <Button id="columns-dropdown-trigger" variant="outline" className="hidden sm:flex glass-card bg-black/20 border-white/10">
+              Columnas <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10 text-white">
@@ -229,7 +230,101 @@ export function TicketTable({ tickets, allUsers }: { tickets: Ticket[], allUsers
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden text-white">
+
+      {/* Mobile Card List View (< md: Phones & Small Tablets) */}
+      <div className="md:hidden space-y-3">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const ticket = row.original;
+            const submitter = getSubmitter(ticket.submitterId);
+            const assignee = getAssignee(ticket.assigneeId);
+            const sla = getSlaStatus(ticket);
+
+            return (
+              <div
+                key={ticket.id}
+                onClick={() => setSelectedId(ticket.id)}
+                className="glass-card bg-black/40 border border-white/10 rounded-2xl p-4 transition-all active:scale-[0.98] hover:border-primary/40 cursor-pointer shadow-md space-y-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-black text-primary">
+                      #{ticket.codigo || ticket.id.substring(0, 8).toUpperCase()}
+                    </span>
+                    <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${priorityColorMap[ticket.priority]}`}>
+                      {ticket.priority}
+                    </Badge>
+                  </div>
+                  <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${statusColorMap[ticket.status]}`}>
+                    {ticket.status}
+                  </Badge>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-bold text-white leading-snug line-clamp-2">
+                    {ticket.subject}
+                  </h4>
+                  {ticket.description && (
+                    <p className="text-xs text-zinc-400 line-clamp-2 mt-1 leading-relaxed">
+                      {ticket.description.replace(/\[ADJUNTO_IMAGEN\]:.*/g, '').trim()}
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-zinc-400">
+                  <div className="flex items-center gap-1.5">
+                    <div className={`h-2 w-2 rounded-full ${sla.color}`} />
+                    <span className="font-medium text-[10px] uppercase tracking-wider">{sla.label}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-500 font-mono text-[10px]">
+                      {ticket.resolvedAt 
+                        ? `Cerrado ${format(ticket.resolvedAt, "dd/MM")}`
+                        : `Vence ${format(ticket.dueAt, "dd/MM")}`}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-zinc-500" />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-6 w-6 border border-white/10">
+                      <AvatarImage src={submitter?.avatarUrl} />
+                      <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                        {(submitter?.name || "U").charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-[11px] text-zinc-300 font-medium truncate max-w-[130px]">
+                      {submitter?.name || "Cliente"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-right">
+                    <span className="text-[10px] text-zinc-500">
+                      {assignee ? assignee.name.split(' ')[0] : 'Sin asignar'}
+                    </span>
+                    {assignee && (
+                      <Avatar className="h-5 w-5 border border-white/10">
+                        <AvatarImage src={assignee.avatarUrl} />
+                        <AvatarFallback className="text-[9px] bg-blue-500/20 text-blue-400">
+                          {assignee.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="p-8 text-center border-2 border-dashed border-white/10 rounded-2xl text-zinc-500 text-xs">
+            No se encontraron tickets.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View (md+) */}
+      <div className="hidden md:block rounded-md border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden text-white">
         <div className="overflow-x-auto">
           <Table>
           <TableHeader>
@@ -310,7 +405,7 @@ export function TicketTable({ tickets, allUsers }: { tickets: Ticket[], allUsers
       <Sheet open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
           <SheetContent className="w-full max-w-none sm:max-w-md md:max-w-lg lg:max-w-xl glass-panel border-l-primary/20 p-3 sm:p-6 overflow-hidden flex flex-col">
               <SheetTitle className="sr-only">Detalles del Requerimiento</SheetTitle>
-              {selectedTicket && (
+              {selectedId && (
                   <TicketDetailsInfo ticketId={selectedId} />
               )}
           </SheetContent>
