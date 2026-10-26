@@ -522,11 +522,12 @@ export default function TecnicosPage() {
                                                 <SelectValue placeholder="Seleccionar rubro..." />
                                             </SelectTrigger>
                                             <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                                                <SelectItem value="Soporte Nivel 1">Soporte Nivel 1</SelectItem>
-                                                <SelectItem value="Soporte Nivel 2">Soporte Nivel 2</SelectItem>
-                                                <SelectItem value="Infraestructura">Infraestructura Fija</SelectItem>
                                                 <SelectItem value="Redes y Servidores">Redes y Servidores</SelectItem>
-                                                <SelectItem value="Analísta de Ciberseguridad">Especialista Seguridad</SelectItem>
+                                                <SelectItem value="Hardware e Infraestructura">Hardware e Infraestructura</SelectItem>
+                                                <SelectItem value="Software y Sistemas">Software y Sistemas</SelectItem>
+                                                <SelectItem value="Seguridad y Accesos">Seguridad y Accesos</SelectItem>
+                                                <SelectItem value="Soporte Nivel 1">Soporte Nivel 1 (General)</SelectItem>
+                                                <SelectItem value="Soporte Nivel 2">Soporte Nivel 2 (Avanzado)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>

@@ -3,6 +3,7 @@
 import { createClient as createSupabaseJS } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { sendTicketNotification } from './notifications'
+import { findBestTechnicianForTicket } from '@/lib/assignment-utils'
 
 function createAdminClient() {
   return createSupabaseJS(
@@ -37,9 +38,13 @@ export async function createTicketAction(data: {
         // Obtener el company_id del usuario para asociarlo al ticket
         const { data: profile } = await supabaseAdmin.from('profiles').select('company_id').eq('id', submitter_id).single();
 
+        // 1. Asignación Automática: Especialidad + Menor Carga (Round-Robin)
+        const assignment = await findBestTechnicianForTicket(category, data.subject, supabaseAdmin);
+
         const { data: ticket, error: ticketError } = await supabaseAdmin.from('tickets').insert([{
             ...baseData,
             creador_id: submitter_id,
+            tecnico_asignado_id: assignment.technicianId || null,
             company_id: profile?.company_id || null,
             description: finalDescription,
             status: 'Ingresado',
@@ -51,18 +56,37 @@ export async function createTicketAction(data: {
             return { success: false, error: ticketError.message };
         }
 
-        // Crear registro inicial en bitácora
+        // 2. Crear registro inicial en bitácora con detalle de la asignación
+        let initialNote = "[SISTEMA] Ticket creado e ingresado al catálogo de servicios operativo.";
+        if (assignment.technicianId && assignment.technicianName) {
+            const reason = assignment.matchType === 'specialty'
+                ? `por coincidencia de especialidad (${assignment.technicianSpecialty})`
+                : `por balance equitativo de carga (cobertura general)`;
+            initialNote += ` Asignado automáticamente a ${assignment.technicianName} ${reason} (${assignment.activeTicketsCount} casos activos).`;
+        } else {
+            initialNote += " Sin técnico disponible en turno. Pendiente de asignación manual por supervisor.";
+        }
+
         await supabaseAdmin.from('notes').insert({
             ticket_id: ticket.id,
             author_id: data.submitter_id,
-            content: "[SISTEMA] Ticket creado e ingresado al catálogo de servicios operativo.",
+            content: initialNote,
         });
 
-        // Lanzar Notificación por Correo
+        // 3. Notificación por Correo al Solicitante
         try {
             await sendTicketNotification(ticket.id, 'Nuevo Requerimiento Registrado', 'submitter');
         } catch(e) {
-            console.error("Fallo de notificacion:", e);
+            console.error("Fallo de notificacion al solicitante:", e);
+        }
+
+        // 4. Si fue asignado a un técnico, notificar al técnico de inmediato
+        if (assignment.technicianId) {
+            try {
+                await sendTicketNotification(ticket.id, 'Nuevo Requerimiento Asignado para Atención', 'assignee');
+            } catch(e) {
+                console.error("Fallo de notificacion al tecnico asignado:", e);
+            }
         }
 
         return { success: true };
@@ -140,6 +164,15 @@ export async function updateTicketAction(id: string, data: any) {
             await sendTicketNotification(id, actionMessage, 'submitter');
         } catch(e) {
             console.error("Fallo de notificacion (update):", e);
+        }
+
+        // Si es reasignación de técnico, notificar también al nuevo técnico responsable
+        if (data.tecnico_asignado_id && oldTicket?.tecnico_asignado_id !== data.tecnico_asignado_id) {
+            try {
+                await sendTicketNotification(id, 'Has sido reasignado como responsable de este caso', 'assignee');
+            } catch(e) {
+                console.error("Fallo de notificacion al nuevo tecnico:", e);
+            }
         }
 
         return { success: true };
