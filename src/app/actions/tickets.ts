@@ -269,27 +269,22 @@ export async function createNoteAction(ticketId: string, authorId: string, conte
 
         if (error) return { success: false, error: error.message };
 
-        // Obtener el ticket para saber quiénes son los involucrados
-        const { data: ticket } = await supabaseAdmin.from('tickets').select('creador_id, tecnico_asignado_id').eq('id', ticketId).single();
-        
-        // No enviar notificaciones de chat para mensajes automáticos del sistema
-        if (ticket && !content.trim().startsWith('[SISTEMA]')) {
-            let targetRole: 'submitter' | 'assignee' = 'submitter';
-            
-            // Si el que escribe es el cliente, notificamos al técnico
-            if (authorId === ticket.creador_id && ticket.tecnico_asignado_id) {
-                targetRole = 'assignee';
-            }
-            // Si el que escribe es el técnico (o un admin distinto al creador), notificamos al cliente
-            else {
-                targetRole = 'submitter';
-            }
-
-            try {
-                await sendTicketNotification(ticketId, 'Nuevo Mensaje en el Chat', targetRole);
-            } catch(e) {
-                console.error("Fallo de notificacion (chat):", e);
-            }
+        // Enviar notificaciones por correo/push en segundo plano para no demorar el chat (Ultra-rápido)
+        if (!content.trim().startsWith('[SISTEMA]')) {
+            (async () => {
+                try {
+                    const { data: ticket } = await supabaseAdmin.from('tickets').select('creador_id, tecnico_asignado_id').eq('id', ticketId).single();
+                    if (ticket) {
+                        let targetRole: 'submitter' | 'assignee' = 'submitter';
+                        if (authorId === ticket.creador_id && ticket.tecnico_asignado_id) {
+                            targetRole = 'assignee';
+                        }
+                        await sendTicketNotification(ticketId, 'Nuevo Mensaje en el Chat', targetRole);
+                    }
+                } catch (e) {
+                    console.error("Fallo de notificacion asincrona (chat):", e);
+                }
+            })();
         }
 
         return { success: true };

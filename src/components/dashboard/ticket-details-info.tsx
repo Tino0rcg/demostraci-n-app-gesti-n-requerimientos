@@ -198,13 +198,23 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             }));
 
             setNotes((prevNotes: Note[]) => {
-                if (
-                    prevNotes.length === mapped.length &&
-                    prevNotes.every((n, i) => n.id === mapped[i].id && n.content === mapped[i].content)
-                ) {
-                    return prevNotes;
+                const hasTempNotes = prevNotes.some(n => n.id.startsWith('temp-'));
+                if (!hasTempNotes) {
+                    if (
+                        prevNotes.length === mapped.length &&
+                        prevNotes.every((n, i) => n.id === mapped[i].id && n.content === mapped[i].content)
+                    ) {
+                        return prevNotes;
+                    }
+                    return mapped;
                 }
-                return mapped;
+
+                // Preservar notas temporales que aún no se reflejan en la base de datos
+                const pendingTemps = prevNotes.filter(n => 
+                    n.id.startsWith('temp-') && 
+                    !mapped.some(m => m.content === n.content && m.authorId === n.authorId && Math.abs(m.createdAt.getTime() - n.createdAt.getTime()) < 15000)
+                );
+                return [...mapped, ...pendingTemps];
             });
         }
     } catch (err) {
@@ -220,12 +230,34 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
     });
     fetchData(true);
 
-    // Canal WebSockets en tiempo real
+    // Canal WebSockets en tiempo real ultra-rápido
     const channel = supabase.channel(`ticket-room-${ticketId}`, {
       config: { broadcast: { self: false } }
     });
 
     channel
+      .on('broadcast', { event: 'instant_message' }, (payload: any) => {
+        const msg = payload.payload;
+        if (!msg || msg.ticketId !== ticketId) return;
+        const myId = currentUserId || currentUserProfile?.id;
+        if (msg.authorId && msg.authorId === myId) return; // ignorar propios
+
+        setTypingUser(null);
+        setNotes((prev: Note[]) => {
+          if (prev.some(n => n.id === msg.id || (n.content === msg.content && n.authorId === msg.authorId && Math.abs(new Date(n.createdAt).getTime() - new Date(msg.createdAt).getTime()) < 5000))) {
+            return prev;
+          }
+          return [...prev, {
+            id: msg.id,
+            ticketId: msg.ticketId,
+            authorId: msg.authorId,
+            content: msg.content,
+            createdAt: new Date(msg.createdAt)
+          }];
+        });
+        playChatNotificationSound();
+        scrollToBottom(true);
+      })
       .on('broadcast', { event: 'new_message' }, () => {
         setTypingUser(null);
         fetchData(false);
@@ -323,57 +355,61 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   const imageUrl = hasImage ? ticket.description.split(imageMarker)[1].trim() : null;
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || sending) return;
-    
-    // Optimistic UI Update: inyectamos el mensaje en la pantalla al instante
-    const tempMessage = newMessage;
-    setNewMessage(""); 
-    setSending(true);
-    
-    try {
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user) {
-            setNewMessage(tempMessage); // rollback si no hay usuario
-            return;
-        }
+    const tempMessage = newMessage.trim();
+    if (!tempMessage) return;
 
-        const tempId = Date.now().toString();
-        const optimisticNote: Note = {
-            id: tempId,
-            ticketId: ticketId,
-            authorId: userData.user.id,
-            content: tempMessage,
-            createdAt: new Date(),
-        };
-
-        // Forzamos que se muestre en pantalla inmediatamente sin esperar a la BD
-        setNotes((prev: Note[]) => [...prev, optimisticNote]);
-
-        // Ahora sí, llamamos a la base de datos en los próximos milisegundos
-        const result = await createNoteAction(ticketId, userData.user.id, tempMessage);
-
-        if (result.success) {
-            channelRef.current?.send({
-                type: 'broadcast',
-                event: 'stop_typing',
-                payload: { userId: userData.user.id }
-            });
-            channelRef.current?.send({
-                type: 'broadcast',
-                event: 'new_message',
-                payload: { ticketId, authorId: userData.user.id, content: tempMessage }
-            });
-            fetchData(false); // Este re-fetch silencioso reemplazará el note temporal por el permanente
-            if (onUpdate) onUpdate();
-        } else {
-            // Rollback visual si falla
-            setNotes((prev: Note[]) => prev.filter(n => n.id !== tempId));
-            setNewMessage(tempMessage);
-            toast({ title: "Error", description: "No se pudo enviar el mensaje.", variant: "destructive" });
-        }
-    } finally {
-        setSending(false);
+    // Obtener autor sin peticiones de red previas
+    let authorId = currentUserId || currentUserProfile?.id;
+    if (!authorId) {
+      const { data: userData } = await supabase.auth.getUser();
+      authorId = userData.user?.id || null;
     }
+    if (!authorId) return;
+
+    // 1. Limpieza de campo y renderizado instantáneo en pantalla (0ms)
+    setNewMessage("");
+    const tempId = `temp-${Date.now()}`;
+    const optimisticNote: Note = {
+      id: tempId,
+      ticketId: ticketId,
+      authorId: authorId,
+      content: tempMessage,
+      createdAt: new Date(),
+    };
+
+    setNotes((prev: Note[]) => [...prev, optimisticNote]);
+    scrollToBottom(true);
+
+    // 2. Transmisión instantánea al otro usuario por WebSockets (<50ms)
+    channelRef.current?.send({
+      type: 'broadcast',
+      event: 'stop_typing',
+      payload: { userId: authorId }
+    });
+    channelRef.current?.send({
+      type: 'broadcast',
+      event: 'instant_message',
+      payload: {
+        id: tempId,
+        ticketId,
+        authorId,
+        content: tempMessage,
+        createdAt: new Date().toISOString()
+      }
+    });
+
+    // 3. Guardado en base de datos en segundo plano (no bloquea la pantalla)
+    createNoteAction(ticketId, authorId, tempMessage).then((result) => {
+      if (result.success) {
+        if (onUpdate) onUpdate();
+        fetchData(false);
+      } else {
+        // Rollback visual si la base de datos falló
+        setNotes((prev: Note[]) => prev.filter(n => n.id !== tempId));
+        setNewMessage(tempMessage);
+        toast({ title: "Error", description: "No se pudo enviar el mensaje.", variant: "destructive" });
+      }
+    });
   };
 
   const handleTyping = (text: string) => {
@@ -796,10 +832,10 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                     />
                     <Button 
                         onClick={sendMessage} 
-                        disabled={!newMessage.trim() || sending} 
+                        disabled={!newMessage.trim()} 
                         className="h-[46px] w-[46px] shrink-0 bg-primary/20 text-primary hover:bg-primary hover:text-white transition-colors rounded-xl p-0 flex items-center justify-center active:scale-95 min-h-[44px] min-w-[44px] cursor-pointer"
                     >
-                        {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                        <Send className="h-5 w-5" />
                     </Button>
                 </div>
             </div>
