@@ -54,15 +54,24 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   const [currentUserProfile, setCurrentUserProfile] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<"chat" | "detalles">("chat");
   const [showFullDesc, setShowFullDesc] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (smooth = false) => {
+    if (chatScrollRef.current) {
+      if (smooth) {
+        chatScrollRef.current.scrollTo({
+          top: chatScrollRef.current.scrollHeight,
+          behavior: "smooth"
+        });
+      } else {
+        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+      }
+    }
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [notes]);
+  }, [notes, activeTab]);
 
   useEffect(() => {
     if (!ticket) return;
@@ -439,8 +448,12 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                 </div>
             )}
 
-            {/* Zona de Chat con SCROLL NATIVO Y FLUIDO */}
-            <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 pr-1 custom-scrollbar bg-black/20 border border-white/5 rounded-xl p-3 shadow-inner">
+            {/* Zona de Chat con SCROLL NATIVO Y FLUIDO (sin pull-to-refresh) */}
+            <div 
+              ref={chatScrollRef}
+              className="flex-1 overflow-y-auto overscroll-contain min-h-0 pr-1 custom-scrollbar bg-black/20 border border-white/5 rounded-xl p-3 shadow-inner"
+              style={{ overscrollBehaviorY: 'contain', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
+            >
                 {notes.length === 0 ? (
                 <div className="text-sm text-center py-6 text-muted-foreground border border-dashed border-white/10 rounded-lg">
                     Sin respuestas en este ticket. ¡Inicia la conversación!
