@@ -5,7 +5,6 @@ import {
     LineChart,
     PieChart,
     BarChart,
-    PanelLeft,
     PlusCircle,
     Search,
     Settings,
@@ -37,7 +36,6 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { Logo } from "@/components/logo";
 import { UserNav } from "@/components/user-nav";
 import { NavLinks } from "@/components/dashboard/nav-links";
@@ -111,46 +109,10 @@ export default async function DashboardLayout({
 
             </aside>
             <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-60">
-                <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-white/10 bg-[#030712]/95 backdrop-blur-xl px-4 pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-3 sm:py-0 sm:h-16 sm:static sm:border-0 sm:bg-transparent sm:px-6">
-                    {/* Botón de Menú Móvil */}
+                <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-white/10 bg-[#030712]/95 backdrop-blur-xl px-4 pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-3 sm:py-0 sm:h-16 sm:static sm:border-0 sm:bg-transparent sm:px-6">
+                    {/* Logo (Visible en móvil) */}
                     <div className="flex items-center sm:hidden">
-                        <Sheet>
-                            <SheetTrigger asChild>
-                                <Button size="icon" variant="outline" className="h-9 w-9 border-white/10 bg-white/5 text-zinc-300 hover:text-white shrink-0">
-                                    <PanelLeft className="h-5 w-5" />
-                                    <span className="sr-only">Toggle Menu</span>
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="left" className="sm:max-w-xs">
-                                <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
-                                <nav className="grid gap-6 text-lg font-medium">
-                                    <Link
-                                        href="#"
-                                        className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
-                                    >
-                                        <Ticket className="h-5 w-5 transition-all group-hover:scale-110" />
-                                        <span className="sr-only">OnlineDesk</span>
-                                    </Link>
-                                    <SheetClose asChild>
-                                        <Link
-                                            href="/dashboard/tickets/new"
-                                            className="flex items-center gap-4 px-2.5 text-primary"
-                                        >
-                                            <PlusCircle className="h-5 w-5" />
-                                            Nuevo Requerimiento
-                                        </Link>
-                                    </SheetClose>
-                                    <div className="flex flex-col gap-2 mt-4">
-                                        <NavLinks role={userData.role} isMobile={true} />
-                                    </div>
-                                </nav>
-                            </SheetContent>
-                        </Sheet>
-                    </div>
-
-                    {/* Logo Centrado en Móvil */}
-                    <div className="flex items-center justify-center sm:hidden flex-1 px-2">
-                        <Link href="/dashboard" className="flex items-center justify-center">
+                        <Link href="/dashboard" className="flex items-center">
                             <Logo />
                         </Link>
                     </div>
@@ -159,7 +121,7 @@ export default async function DashboardLayout({
                     <div className="hidden sm:flex sm:flex-1"></div>
 
                     {/* Perfil de Usuario */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
                         <UserNav user={userData} />
                     </div>
                 </header>
