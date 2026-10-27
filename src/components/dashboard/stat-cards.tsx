@@ -1,17 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Ticket } from "@/lib/definitions";
 import { CheckCircle, CircleDot, AlertTriangle, Ticket as TicketIcon } from "lucide-react";
-import { getSlaStatus } from "@/lib/sla-utils";
 
-export function StatCards({ tickets }: { tickets: Ticket[] }) {
-  const openTickets = tickets.filter(t => t.status === 'Ingresado').length;
-  const inProgressTickets = tickets.filter(t => t.status === 'En proceso').length;
-  const resolvedTickets = tickets.filter(t => t.status === 'Terminado').length;
+export function StatCards({ tickets = [] }: { tickets?: Ticket[] }) {
+  const safeTickets = tickets || [];
+  const openTickets = safeTickets.filter(t => t.status === 'Ingresado').length;
+  const inProgressTickets = safeTickets.filter(t => t.status === 'En proceso' || t.status === 'Espera de aprobación').length;
+  const resolvedTickets = safeTickets.filter(t => t.status === 'Terminado').length;
   
-  // Calculate critical SLA status
-  const criticalTickets = tickets.filter(t => {
-    const sla = getSlaStatus(t);
-    return sla.label === 'SLA VENCIDO' || sla.label === 'SLA CRÍTICO';
+  // Calcular tickets que excedieron o están excediendo el tiempo contractual de SLA
+  const criticalTickets = safeTickets.filter(t => {
+    if (t.status === 'Terminado') {
+      const resolved = t.resolvedAt || t.updatedAt;
+      return resolved > t.dueAt;
+    }
+    const now = new Date();
+    return now > t.dueAt;
   }).length;
 
   return (

@@ -2,38 +2,40 @@
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { tickets } from "@/lib/data";
-import { TicketPriority, TicketStatus } from "@/lib/definitions";
+import { TicketPriority, TicketStatus, Ticket } from "@/lib/definitions";
 
-const statusCounts: Record<TicketStatus, number> = {
-  Open: 0,
-  "In Progress": 0,
-  Resolved: 0,
-  Closed: 0,
-};
+export function Reports({ tickets = [] }: { tickets?: Ticket[] }) {
+  const statusCounts: Record<TicketStatus, number> = {
+    Ingresado: 0,
+    "En proceso": 0,
+    "Espera de aprobación": 0,
+    Terminado: 0,
+  };
 
-const priorityCounts: Record<TicketPriority, number> = {
-  Low: 0,
-  Medium: 0,
-  High: 0,
-  Critical: 0,
-};
+  const priorityCounts: Record<TicketPriority, number> = {
+    Baja: 0,
+    Media: 0,
+    Alta: 0,
+    Crítica: 0,
+  };
 
-tickets.forEach(ticket => {
-  statusCounts[ticket.status]++;
-  priorityCounts[ticket.priority]++;
-});
+  tickets.forEach(ticket => {
+    if (statusCounts[ticket.status] !== undefined) {
+      statusCounts[ticket.status]++;
+    }
+    if (priorityCounts[ticket.priority] !== undefined) {
+      priorityCounts[ticket.priority]++;
+    }
+  });
 
-const statusData = Object.entries(statusCounts).map(([name, total]) => ({ name, total }));
-const priorityData = Object.entries(priorityCounts).map(([name, total]) => ({ name, total }));
+  const statusData = Object.entries(statusCounts).map(([name, total]) => ({ name, total }));
+  const priorityData = Object.entries(priorityCounts).map(([name, total]) => ({ name, total }));
 
-
-export function Reports() {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>Tickets by Status</CardTitle>
+          <CardTitle>Requerimientos por Estado</CardTitle>
         </CardHeader>
         <CardContent className="pl-2">
           <ResponsiveContainer width="100%" height={350}>
@@ -59,7 +61,7 @@ export function Reports() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Tickets by Priority</CardTitle>
+          <CardTitle>Requerimientos por Prioridad</CardTitle>
         </CardHeader>
         <CardContent className="pl-2">
           <ResponsiveContainer width="100%" height={350}>

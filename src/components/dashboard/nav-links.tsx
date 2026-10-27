@@ -36,7 +36,7 @@ export function NavLinks({ role, isMobile }: { role?: string, isMobile?: boolean
         const roleTrimmed = role?.trim();
 
         if (item.href === "/dashboard/dashboards") {
-            return roleTrimmed === 'Administrador Full';
+            return roleTrimmed === 'Administrador Full' || roleTrimmed === 'Administrador Cliente';
         }
         
         if (item.href === "/dashboard/clientes" || item.href === "/dashboard/tecnicos" || item.href === "/dashboard/servicios") {

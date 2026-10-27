@@ -1,7 +1,7 @@
 import { AnalyticsCharts } from "@/components/dashboard/analytics-charts";
 import { StatCards } from "@/components/dashboard/stat-cards";
 import { ShieldCheck, BarChart3, TrendingUp } from "lucide-react";
-import { getTickets, getUsers } from "@/lib/data-server";
+import { getTickets, getUsers, getServices } from "@/lib/data-server";
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -22,16 +22,25 @@ export default async function DashboardsPage() {
 
     const { data: profile } = await supabaseAdmin
         .from('profiles')
-        .select('role')
+        .select('role, company_id')
         .eq('id', user.id)
         .single();
 
-    if (profile?.role?.trim() !== 'Administrador Full') {
+    const userRole = profile?.role?.trim();
+
+    // Solo administradores (Full o de Cliente) y técnicos autorizados
+    if (userRole !== 'Administrador Full' && userRole !== 'Administrador Cliente') {
         redirect("/dashboard");
     }
 
-    const tickets = await getTickets();
+    const allTickets = await getTickets();
     const allUsers = await getUsers();
+    const allServices = await getServices();
+
+    // Si es Administrador Cliente, filtrar solo los requerimientos de su empresa
+    const visibleTickets = (userRole === 'Administrador Cliente' && profile?.company_id)
+        ? allTickets.filter((t: any) => t.company_id === profile.company_id)
+        : allTickets;
 
     return (
         <div className="flex flex-col gap-8">
@@ -46,14 +55,14 @@ export default async function DashboardsPage() {
                 </p>
             </div>
 
-            <StatCards tickets={tickets} />
+            <StatCards tickets={visibleTickets} />
 
             <div className="grid gap-4 mt-4">
                 <div className="flex items-center gap-2 mb-2">
                     <BarChart3 className="h-5 w-5 text-primary" />
                     <h2 className="text-xl font-bold text-white uppercase tracking-tight">Visualizaciones Analíticas</h2>
                 </div>
-                <AnalyticsCharts tickets={tickets} allUsers={allUsers} />
+                <AnalyticsCharts tickets={visibleTickets} allUsers={allUsers} services={allServices} />
             </div>
 
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 mt-4">
