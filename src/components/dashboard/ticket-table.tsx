@@ -403,10 +403,12 @@ export function TicketTable({ tickets, allUsers }: { tickets: Ticket[], allUsers
 
       {/* Detalles del Ticket Side Panel */}
       <Sheet open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-          <SheetContent className="w-full max-w-none sm:max-w-md md:max-w-lg lg:max-w-xl glass-panel border-l-primary/20 p-3 sm:p-6 overflow-hidden flex flex-col">
+          <SheetContent className="w-full max-w-none sm:max-w-md md:max-w-lg lg:max-w-xl glass-panel border-l-primary/20 p-0 overflow-hidden flex flex-col">
               <SheetTitle className="sr-only">Detalles del Requerimiento</SheetTitle>
               {selectedId && (
-                  <TicketDetailsInfo ticketId={selectedId} />
+                  <div className="h-full flex flex-col p-3 sm:p-6 pt-[max(1.25rem,env(safe-area-inset-top)+0.5rem)] sm:pt-6">
+                      <TicketDetailsInfo ticketId={selectedId} />
+                  </div>
               )}
           </SheetContent>
       </Sheet>

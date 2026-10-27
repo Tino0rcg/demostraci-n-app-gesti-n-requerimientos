@@ -52,6 +52,8 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   const [timeLeftStr, setTimeLeftStr] = useState<string>("");
   const [isOverdueSla, setIsOverdueSla] = useState<boolean>(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<User | null>(null);
+  const [activeTab, setActiveTab] = useState<"chat" | "detalles">("chat");
+  const [showFullDesc, setShowFullDesc] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -175,6 +177,11 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   const assignee = profiles.find((u) => u.id === ticket.assigneeId);
   const sla = getSlaStatus(ticket);
 
+  const imageMarker = "[ADJUNTO_IMAGEN]: ";
+  const hasImage = ticket.description?.includes(imageMarker);
+  const cleanDescription = hasImage ? ticket.description.split(imageMarker)[0].trim() : (ticket.description || "");
+  const imageUrl = hasImage ? ticket.description.split(imageMarker)[1].trim() : null;
+
   const sendMessage = async () => {
     if (!newMessage.trim() || sending) return;
     
@@ -274,235 +281,167 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 w-full">
-      <SheetHeader className="mb-4 flex-none">
-        <div className="flex items-center gap-2 mb-2">
-            <Badge variant="outline" className="text-xs bg-muted/30 font-bold text-primary border-primary/20">#{ticket.codigo || ticket.id.substring(0,8).toUpperCase()}</Badge>
-            <Badge variant="outline" className={`text-xs ${statusColorMap[ticket.status]}`}>{ticket.status}</Badge>
-            <Badge variant="outline" className={priorityColorMap[ticket.priority]}>{ticket.priority}</Badge>
+    <div className="flex flex-col flex-1 min-h-0 w-full overflow-hidden">
+      {/* Top Header Bar: Compact & Mobile-Safe */}
+      <div className="flex-none pb-2 border-b border-white/10">
+        <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 pr-12 flex-wrap">
+            <Badge variant="outline" className="text-xs bg-muted/30 font-bold text-primary border-primary/20 shrink-0">
+              #{ticket.codigo || ticket.id.substring(0,8).toUpperCase()}
+            </Badge>
+            <Badge variant="outline" className={`text-xs shrink-0 ${statusColorMap[ticket.status]}`}>
+              {ticket.status}
+            </Badge>
+            <Badge variant="outline" className={`text-xs hidden sm:inline-flex shrink-0 ${priorityColorMap[ticket.priority]}`}>
+              {ticket.priority}
+            </Badge>
             
-            <div className={`flex flex-col items-end gap-1 ml-auto`}>
-                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted/20 border border-border/50`}>
-                    <div title={sla.label} className={`h-2 w-2 rounded-full ${sla.color}`} />
-                    <span className="text-[10px] uppercase font-bold tracking-wider">{sla.label}</span>
-                </div>
-                {timeLeftStr && (
+            {timeLeftStr && (
+                <div className="ml-auto flex items-center">
                     <span className={`flex items-center text-[10px] font-mono font-bold tracking-wider px-2 py-0.5 rounded border border-white/5 bg-black/40 ${isOverdueSla ? 'text-red-400' : 'text-primary'}`}>
                         <Timer className={`w-3 h-3 mr-1 ${(ticket.status === 'Ingresado' || ticket.status === 'En proceso') ? 'animate-pulse' : ''}`} />
                         {timeLeftStr}
                     </span>
+                </div>
+            )}
+        </div>
+
+        <h2 className="text-sm sm:text-base font-bold leading-snug text-white line-clamp-2 pr-12">
+            {ticket.subject}
+        </h2>
+
+        {/* Segmented Control: Chat vs Detalles */}
+        <div className="flex items-center gap-1.5 p-1 bg-black/40 border border-white/10 rounded-xl mt-2.5">
+            <button
+                type="button"
+                onClick={() => setActiveTab("chat")}
+                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all min-h-[38px] cursor-pointer ${
+                    activeTab === "chat"
+                        ? "bg-primary text-black shadow-md shadow-primary/20 font-black"
+                        : "text-zinc-400 hover:text-white hover:bg-white/5"
+                }`}
+            >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Chat y Conversación</span>
+                {notes.length > 0 && (
+                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                        activeTab === "chat" ? "bg-black/30 text-black font-black" : "bg-white/10 text-zinc-300"
+                    }`}>
+                        {notes.length}
+                    </span>
+                )}
+            </button>
+            <button
+                type="button"
+                onClick={() => setActiveTab("detalles")}
+                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all min-h-[38px] cursor-pointer ${
+                    activeTab === "detalles"
+                        ? "bg-primary text-black shadow-md shadow-primary/20 font-black"
+                        : "text-zinc-400 hover:text-white hover:bg-white/5"
+                }`}
+            >
+                <AlertCircle className="w-3.5 h-3.5" />
+                <span>Detalles y Datos</span>
+                {imageUrl && (
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 ml-0.5" title="Tiene imagen adjunta" />
+                )}
+            </button>
+        </div>
+      </div>
+
+      {/* VISTA 1: CHAT Y BITÁCORA */}
+      {activeTab === "chat" && (
+        <div className="flex flex-col flex-1 min-h-0 w-full mt-2">
+            {/* Resumen colapsable de la descripción del problema */}
+            <div className="p-2.5 bg-primary/5 border border-primary/20 rounded-xl text-xs flex-none mb-2">
+                <div className="flex items-center justify-between">
+                    <span className="font-bold text-primary flex items-center gap-1.5 text-[11px] uppercase tracking-wider">
+                        <Sparkles className="w-3 h-3" /> Problema Reportado
+                    </span>
+                    <div className="flex items-center gap-2">
+                        {imageUrl && (
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("detalles")}
+                                className="text-[10px] text-cyan-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                            >
+                                <ImageIcon className="w-3 h-3" /> Ver Foto
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setShowFullDesc(!showFullDesc)}
+                            className="text-[10px] text-primary/80 hover:text-primary font-bold underline cursor-pointer"
+                        >
+                            {showFullDesc ? "Ocultar" : "Ver más"}
+                        </button>
+                    </div>
+                </div>
+                {showFullDesc ? (
+                    <p className="mt-1.5 text-zinc-300 text-xs whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto custom-scrollbar">
+                        {cleanDescription}
+                    </p>
+                ) : (
+                    <p className="mt-1 text-zinc-400 text-xs truncate">
+                        {cleanDescription || "Sin descripción proporcionada."}
+                    </p>
                 )}
             </div>
-        </div>
-        <SheetTitle className="text-xl font-bold leading-tight text-white">{ticket.subject}</SheetTitle>
-        <div className="flex flex-col gap-1 mt-3 p-3 bg-white/5 border border-white/10 rounded-lg">
-            <div className="flex items-center gap-2 text-xs">
-                <span className="text-zinc-500 font-medium">Solicitante:</span>
-                <span className="text-white font-bold">{submitter?.name || "Desconocido"}</span>
-            </div>
-            {currentUserProfile?.id !== ticket.submitterId && submitter?.phone && (
-                <div className="flex items-center gap-2 text-xs">
-                    <span className="text-zinc-500 font-medium">Llamar Cliente:</span>
-                    <span className="text-blue-400 font-mono inline-flex items-center gap-1.5 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
-                        <Phone className="w-3 h-3" />
-                        <a href={`tel:${submitter.phone}`} className="hover:underline">{submitter.phone}</a>
-                    </span>
-                </div>
-            )}
-            <div className="flex items-center gap-2 text-xs">
-                <span className="text-zinc-500 font-medium">Correo:</span>
-                <span className="text-zinc-300">{submitter?.email || "-"}</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-                <span className="text-zinc-500 font-medium">Empresa:</span>
-                <span className="text-primary font-black tracking-tight italic uppercase">{submitter?.empresa || "Externo"}</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs pt-2 border-t border-white/5 mt-1">
-                <span className="text-zinc-500 font-medium">Resp. Técnico:</span>
-                <span className={`${assignee ? 'text-white font-bold' : 'text-zinc-500 italic'}`}>{assignee?.name || "Sin Asignar"}</span>
-            </div>
-            {currentUserProfile?.id === ticket.submitterId && assignee?.phone && (
-                <div className="flex items-center gap-2 text-xs">
-                    <span className="text-zinc-500 font-medium">Llamar Soporte:</span>
-                    <span className="text-primary font-mono inline-flex items-center gap-1.5 bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-                        <Phone className="w-3 h-3" />
-                        <a href={`tel:${assignee.phone}`} className="hover:underline">{assignee.phone}</a>
-                    </span>
-                </div>
-            )}
-        </div>
-        <div className="flex items-center text-[10px] text-muted-foreground mt-3 gap-3 opacity-70">
-            <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                <span>Registrado el {format(ticket.createdAt, "dd/MM/yyyy HH:mm")}</span>
-            </div>
-            <div className="flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                <span>Módulo: {ticket.category}</span>
-            </div>
-        </div>
 
-        {(() => {
-            const imageMarker = "[ADJUNTO_IMAGEN]: ";
-            const hasImage = ticket.description.includes(imageMarker);
-            const cleanDescription = hasImage ? ticket.description.split(imageMarker)[0].trim() : ticket.description;
-            const imageUrl = hasImage ? ticket.description.split(imageMarker)[1].trim() : null;
-
-            return (
-                <>
-                    <div className="mt-5 p-5 bg-primary/5 rounded-xl border border-primary/20">
-                        <h4 className="text-xs font-bold uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
-                            <Sparkles className="w-4 h-4" /> Descripción del Problema
-                        </h4>
-                        <div className="text-base text-zinc-200 leading-relaxed whitespace-pre-wrap">
-                            {cleanDescription || "Sin descripción proporcionada."}
-                        </div>
-                    </div>
-
-                    {imageUrl && (
-                        <div className="mt-4 group relative">
-                            <div className="absolute inset-0 bg-primary/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl" />
-                            <div className="relative rounded-xl border border-white/10 overflow-hidden bg-black/40 shadow-2xl">
-                                <div className="p-2 border-b border-white/5 bg-white/5 flex items-center justify-between">
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500 px-2 py-0.5 rounded-full border border-white/5">
-                                        Evidencia Adjunta
-                                    </span>
-                                    <ImageIcon className="w-3 h-3 text-primary" />
-                                </div>
-                                <div className="aspect-video relative overflow-hidden">
-                                    <img 
-                                        src={imageUrl} 
-                                        alt="Evidencia del problema" 
-                                        className="w-full h-full object-contain hover:scale-105 transition-transform duration-500"
-                                    />
-                                    <a 
-                                        href={imageUrl} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg text-[10px] text-white font-bold uppercase tracking-widest border border-white/10 opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:text-black"
-                                    >
-                                        Ver imagen completa
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </>
-            );
-        })()}
-      </SheetHeader>
-
-      <ScrollArea className="flex-1 pr-1 sm:pr-4">
-        <div className="flex flex-col min-h-full pb-8">
-            {/* Controles de Ticket permanentemente visibles */}
-            <div className="w-full mb-4">
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 shadow-lg">
-                    <div className="flex items-center gap-2 mb-4 border-b border-primary/10 pb-3">
-                        <span className="text-[11px] font-black uppercase tracking-widest text-primary">⚙️ Acciones Requeridas</span>
-                        {(ticket.status === 'En proceso' || ticket.status === 'Ingresado' || ticket.status === 'Espera de aprobación') && (
-                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                        )}
-                    </div>
-                        {/* Controles de Flujo de Trabajo (Workflow Panel) */}
-      <div className="mb-6 flex-none">
-        <h4 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Flujo de Trabajo Operativo</h4>
-        <div className="flex flex-wrap gap-2">
+            {/* Acciones Rápidas (Workflow) si el ticket requiere acción inmediata */}
             {ticket.status === 'Ingresado' && (currentUserProfile?.role === 'Técnico' || currentUserProfile?.role === 'Administrador Full') && (
-                <Button disabled={isUpdating} onClick={() => handleAction('En proceso', 'Ticket marcado como "En Proceso" por el técnico. Comenzando a trabajar en la solución.')} className="w-full sm:w-auto min-h-[44px] text-xs sm:text-sm font-semibold bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30">
-                    <Play className="w-4 h-4 mr-2" /> Iniciar Trabajo (Agente)
-                </Button>
+                <div className="mb-2 flex-none">
+                    <Button 
+                        disabled={isUpdating} 
+                        onClick={() => handleAction('En proceso', 'Ticket marcado como "En Proceso" por el técnico. Comenzando a trabajar en la solución.')} 
+                        className="w-full min-h-[42px] text-xs font-bold bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30 shadow-md"
+                    >
+                        <Play className="w-4 h-4 mr-2" /> Iniciar Trabajo en este Ticket
+                    </Button>
+                </div>
             )}
-            
+
             {ticket.status === 'En proceso' && (currentUserProfile?.role === 'Técnico' || currentUserProfile?.role === 'Administrador Full') && (
-                <Button disabled={isUpdating} onClick={() => handleAction('Espera de aprobación', 'Trabajo finalizado por el técnico. Enviado al cliente para revisión y control de calidad.')} className="w-full sm:w-auto min-h-[44px] text-xs sm:text-sm font-semibold bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30">
-                    <AlertCircle className="w-4 h-4 mr-2" /> Enviar a Revisión (Al Cliente)
-                </Button>
+                <div className="mb-2 flex-none">
+                    <Button 
+                        disabled={isUpdating} 
+                        onClick={() => handleAction('Espera de aprobación', 'Trabajo finalizado por el técnico. Enviado al cliente para revisión y control de calidad.')} 
+                        className="w-full min-h-[42px] text-xs font-bold bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30 shadow-md"
+                    >
+                        <AlertCircle className="w-4 h-4 mr-2" /> Enviar a Revisión al Cliente
+                    </Button>
+                </div>
             )}
 
             {ticket.status === 'Espera de aprobación' && (currentUserProfile?.id === ticket.submitterId) && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
-                    <Button disabled={isUpdating} onClick={() => handleAction('Terminado', 'Solución validada y aceptada por el cliente. Ticket cerrado exitosamente.')} className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30">
-                        <CheckCircle2 className="w-4 h-4 mr-2" /> Aprobar Solución
-                    </Button>
-                    <div className="group relative w-full">
+                <div className="mb-2 flex-none p-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                    <p className="text-[11px] font-bold text-yellow-400 uppercase tracking-wider mb-2 text-center">
+                        El técnico ha concluido la solución. ¿Deseas aprobarla o rechazarla?
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 w-full">
+                        <Button 
+                            disabled={isUpdating} 
+                            onClick={() => handleAction('Terminado', 'Solución validada y aceptada por el cliente. Ticket cerrado exitosamente.')} 
+                            className="min-h-[42px] text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30"
+                        >
+                            <CheckCircle2 className="w-4 h-4 mr-1.5" /> Aprobar
+                        </Button>
                         <Button 
                             disabled={!newMessage.trim() || isUpdating} 
                             onClick={() => {
                                 handleAction('En proceso', `Solución RECHAZADA por el cliente. Motivo: ${newMessage}`);
-                                setNewMessage(""); // Limpiar caja después
+                                setNewMessage("");
                             }} 
-                            className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 disabled:opacity-50"
+                            className="min-h-[42px] text-xs font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 disabled:opacity-50"
                         >
-                            <XCircle className="w-4 h-4 mr-2" /> Rechazar Solución
+                            <XCircle className="w-4 h-4 mr-1.5" /> Rechazar
                         </Button>
-                        {!newMessage.trim() && (
-                            <span className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-1 text-[10px] text-red-400 opacity-0 transition-opacity group-hover:opacity-100 border border-red-500/20">
-                                Escribe el motivo abajo para poder rechazar
-                            </span>
-                        )}
                     </div>
                 </div>
             )}
 
-            {ticket.status === 'Terminado' && (
-                <div className="text-sm font-medium text-green-400 flex items-center">
-                    <CheckCircle2 className="w-4 h-4 mr-2" /> Este requerimiento ha finalizado exitosamente.
-                </div>
-            )}
-        </div>
-      </div>
-
-      {/* Panel de Asignación (Admin Only UI) */}
-      {currentUserProfile?.role === 'Administrador Full' && (
-      <div className="mb-6 flex-none bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
-        <div className="flex items-center justify-between mb-3">
-            <h4 className="text-[11px] font-bold uppercase tracking-widest text-blue-400">Control de Asignación</h4>
-            <UserCheck className="w-3.5 h-3.5 text-blue-400" />
-        </div>
-        <div className="space-y-3">
-            <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10 border border-white/10 shrink-0">
-                    <AvatarImage src={assignee?.avatarUrl} />
-                    <AvatarFallback className="bg-blue-500/20 text-blue-400">{assignee?.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{assignee?.name || "Sin Asignar"}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase">{assignee?.role === 'Técnico' ? 'Técnico Especialista' : 'Supervisor'}</p>
-                </div>
-            </div>
-            <div className="pt-2 border-t border-blue-500/10">
-                <Label className="text-[10px] text-zinc-500 mb-1.5 block">Cambiar responsable del caso:</Label>
-                <Select 
-                    disabled={ticket.status === 'Terminado'} 
-                    value={ticket.assigneeId || ""} 
-                    onValueChange={handleReassign}
-                >
-                    <SelectTrigger className={`h-8 bg-black/40 border-white/5 text-xs text-zinc-300 ${ticket.status === 'Terminado' ? 'opacity-50' : ''}`}>
-                        <SelectValue placeholder="Seleccionar técnico..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-white/10">
-                        {profiles.filter(u => u.role === 'Técnico' || u.role === 'Administrador Full').map(u => (
-                            <SelectItem key={u.id} value={u.id} className="text-xs focus:bg-blue-500/20 focus:text-blue-200">
-                                {u.name} ({u.empresa})
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-        </div>
-      </div>
-      )}
-                </div>
-            </div>
-
-      {/* Chat / Bitácora (Caja independiente) */}
-      <h3 className="text-xs font-bold flex items-center gap-2 text-primary flex-none mb-3 pl-1 uppercase tracking-widest mt-4">
-          <MessageSquare className="h-4 w-4" /> Historial de Conversación
-      </h3>
-      <div className="flex-1 bg-black/20 border border-white/5 rounded-xl p-4 shadow-inner">
-        <div className="space-y-4">
-            
-            {notes.length === 0 ? (
+            {/* Zona de Chat con SCROLL NATIVO Y FLUIDO */}
+            <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 pr-1 custom-scrollbar bg-black/20 border border-white/5 rounded-xl p-3 shadow-inner">
+                {notes.length === 0 ? (
                 <div className="text-sm text-center py-6 text-muted-foreground border border-dashed border-white/10 rounded-lg">
                     Sin respuestas en este ticket. ¡Inicia la conversación!
                 </div>
@@ -587,39 +526,228 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                 </div>
             )}
         </div>
-      </div>
-      </div>
-      </ScrollArea>
 
-      {/* Input de Mensajes */}
-      {ticket.status !== 'Terminado' ? (
-        <div className="flex-none pt-2 pb-safe sm:pb-0 mt-auto bg-background/95">
-            <div className="flex gap-2 items-center">
-                <Textarea
-                    placeholder={ticket.status === 'Espera de aprobación' ? "Explica el motivo (Si rechazas) o agradece (Si apruebas)..." : "Responde al técnico o agrega detalles..."}
-                    className="resize-none min-h-[50px] max-h-[120px] bg-black/40 border-white/10 text-base sm:text-sm py-3 rounded-xl focus:ring-1 focus:ring-primary/50"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            sendMessage();
-                        }
-                    }}
-                />
-                <Button onClick={sendMessage} disabled={!newMessage.trim() || sending} className="h-12 w-12 shrink-0 bg-primary/20 text-primary hover:bg-primary hover:text-white transition-colors rounded-xl p-0 flex items-center justify-center">
-                    {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-                </Button>
+        {/* Input de Mensajes */}
+        {ticket.status !== 'Terminado' ? (
+            <div className="flex-none pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pb-0 mt-auto bg-background/95">
+                <div className="flex gap-2 items-center">
+                    <Textarea
+                        placeholder={ticket.status === 'Espera de aprobación' ? "Explica el motivo (Si rechazas) o agradece (Si apruebas)..." : "Escribe un mensaje o responde..."}
+                        className="resize-none min-h-[46px] max-h-[120px] bg-black/40 border-white/10 text-base sm:text-sm py-2.5 px-3 rounded-xl focus:ring-1 focus:ring-primary/50"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                sendMessage();
+                            }
+                        }}
+                    />
+                    <Button 
+                        onClick={sendMessage} 
+                        disabled={!newMessage.trim() || sending} 
+                        className="h-[46px] w-[46px] shrink-0 bg-primary/20 text-primary hover:bg-primary hover:text-white transition-colors rounded-xl p-0 flex items-center justify-center active:scale-95 min-h-[44px] min-w-[44px] cursor-pointer"
+                    >
+                        {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                    </Button>
+                </div>
             </div>
-        </div>
-      ) : (
-        <div className="flex-none pt-4 pb-safe sm:pb-0 border-t border-white/10 mt-auto">
-            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 flex items-center justify-center gap-3">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
-                <span className="text-xs sm:text-sm font-bold text-emerald-400 uppercase tracking-widest italic text-center">
-                    Ticket Finalizado y Almacenado en Historial
+        ) : (
+            <div className="flex-none pt-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pb-0 border-t border-white/10 mt-auto">
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 flex items-center justify-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest italic text-center">
+                        Ticket Finalizado y Almacenado en Historial
+                    </span>
+                </div>
+            </div>
+        )}
+      </div>
+      )}
+
+      {/* VISTA 2: DETALLES DEL TICKET */}
+      {activeTab === "detalles" && (
+        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 pr-1 space-y-4 custom-scrollbar mt-2 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+            {/* Contacto & Solicitante */}
+            <div className="p-3.5 bg-white/5 border border-white/10 rounded-xl space-y-2">
+                <h4 className="text-[11px] font-bold uppercase tracking-widest text-primary mb-2">Información del Caso</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                    <div>
+                        <span className="text-zinc-500 font-medium block">Solicitante:</span>
+                        <span className="text-white font-bold">{submitter?.name || "Desconocido"}</span>
+                    </div>
+                    <div>
+                        <span className="text-zinc-500 font-medium block">Empresa:</span>
+                        <span className="text-primary font-black uppercase tracking-wider">{submitter?.empresa || "Externo"}</span>
+                    </div>
+                    <div>
+                        <span className="text-zinc-500 font-medium block">Correo:</span>
+                        <span className="text-zinc-300 break-all">{submitter?.email || "-"}</span>
+                    </div>
+                    <div>
+                        <span className="text-zinc-500 font-medium block">Técnico Responsable:</span>
+                        <span className={assignee ? "text-white font-bold" : "text-zinc-500 italic"}>
+                            {assignee?.name || "Sin Asignar"}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Botones de llamada */}
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5 mt-2">
+                    {currentUserProfile?.id !== ticket.submitterId && submitter?.phone && (
+                        <a 
+                            href={`tel:${submitter.phone}`} 
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-mono font-bold hover:bg-blue-500/20 min-h-[38px]"
+                        >
+                            <Phone className="w-3.5 h-3.5" /> Llamar Cliente ({submitter.phone})
+                        </a>
+                    )}
+                    {currentUserProfile?.id === ticket.submitterId && assignee?.phone && (
+                        <a 
+                            href={`tel:${assignee.phone}`} 
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-mono font-bold hover:bg-primary/20 min-h-[38px]"
+                        >
+                            <Phone className="w-3.5 h-3.5" /> Llamar Soporte ({assignee.phone})
+                        </a>
+                    )}
+                </div>
+            </div>
+
+            {/* Fechas & Módulo */}
+            <div className="flex items-center justify-between text-[11px] text-zinc-400 px-1 flex-wrap gap-2">
+                <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-primary" /> Creado el {format(ticket.createdAt, "dd/MM/yyyy HH:mm")}
+                </span>
+                <span className="flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3 text-primary" /> Módulo: <strong className="text-zinc-300">{ticket.category}</strong>
                 </span>
             </div>
+
+            {/* Descripción Completa */}
+            <div className="p-4 bg-primary/5 rounded-xl border border-primary/20">
+                <h4 className="text-xs font-bold uppercase tracking-widest text-primary mb-2.5 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" /> Descripción Completa del Problema
+                </h4>
+                <div className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap">
+                    {cleanDescription || "Sin descripción proporcionada."}
+                </div>
+            </div>
+
+            {/* Evidencia Imagen (si existe) */}
+            {imageUrl && (
+                <div className="rounded-xl border border-white/10 overflow-hidden bg-black/40 shadow-2xl">
+                    <div className="p-2.5 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
+                            <ImageIcon className="w-3.5 h-3.5 text-primary" /> Captura / Evidencia Adjunta
+                        </span>
+                        <a 
+                            href={imageUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-primary hover:underline font-bold uppercase tracking-wider"
+                        >
+                            Abrir en pantalla completa ↗
+                        </a>
+                    </div>
+                    <div className="relative overflow-hidden bg-black/60 p-2 flex items-center justify-center">
+                        <img 
+                            src={imageUrl} 
+                            alt="Evidencia del problema" 
+                            className="max-h-72 w-auto object-contain rounded-lg shadow-lg"
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Acciones de Flujo de Trabajo */}
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 shadow-lg space-y-3">
+                <h4 className="text-[11px] font-bold uppercase tracking-widest text-primary">Flujo de Trabajo Operativo</h4>
+                <div className="flex flex-col gap-2">
+                    {ticket.status === 'Ingresado' && (currentUserProfile?.role === 'Técnico' || currentUserProfile?.role === 'Administrador Full') && (
+                        <Button disabled={isUpdating} onClick={() => handleAction('En proceso', 'Ticket marcado como "En Proceso" por el técnico. Comenzando a trabajar en la solución.')} className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30">
+                            <Play className="w-4 h-4 mr-2" /> Iniciar Trabajo (Agente)
+                        </Button>
+                    )}
+                    
+                    {ticket.status === 'En proceso' && (currentUserProfile?.role === 'Técnico' || currentUserProfile?.role === 'Administrador Full') && (
+                        <Button disabled={isUpdating} onClick={() => handleAction('Espera de aprobación', 'Trabajo finalizado por el técnico. Enviado al cliente para revisión y control de calidad.')} className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30">
+                            <AlertCircle className="w-4 h-4 mr-2" /> Enviar a Revisión (Al Cliente)
+                        </Button>
+                    )}
+
+                    {ticket.status === 'Espera de aprobación' && (currentUserProfile?.id === ticket.submitterId) && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                            <Button disabled={isUpdating} onClick={() => handleAction('Terminado', 'Solución validada y aceptada por el cliente. Ticket cerrado exitosamente.')} className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30">
+                                <CheckCircle2 className="w-4 h-4 mr-2" /> Aprobar Solución
+                            </Button>
+                            <div className="group relative w-full">
+                                <Button 
+                                    disabled={!newMessage.trim() || isUpdating} 
+                                    onClick={() => {
+                                        handleAction('En proceso', `Solución RECHAZADA por el cliente. Motivo: ${newMessage}`);
+                                        setNewMessage("");
+                                    }} 
+                                    className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 disabled:opacity-50"
+                                >
+                                    <XCircle className="w-4 h-4 mr-2" /> Rechazar Solución
+                                </Button>
+                                {!newMessage.trim() && (
+                                    <span className="block mt-1 text-[10px] text-red-400 text-center">
+                                        Escribe el motivo en el chat para poder rechazar
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {ticket.status === 'Terminado' && (
+                        <div className="text-sm font-medium text-green-400 flex items-center justify-center p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                            <CheckCircle2 className="w-4 h-4 mr-2" /> Este requerimiento ha finalizado exitosamente.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Control de Asignación (Administrador Full) */}
+            {currentUserProfile?.role === 'Administrador Full' && (
+                <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-[11px] font-bold uppercase tracking-widest text-blue-400">Control de Asignación</h4>
+                        <UserCheck className="w-3.5 h-3.5 text-blue-400" />
+                    </div>
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 border border-white/10 shrink-0">
+                                <AvatarImage src={assignee?.avatarUrl} />
+                                <AvatarFallback className="bg-blue-500/20 text-blue-400">{assignee?.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-white truncate">{assignee?.name || "Sin Asignar"}</p>
+                                <p className="text-[10px] text-muted-foreground uppercase">{assignee?.role === 'Técnico' ? 'Técnico Especialista' : 'Supervisor'}</p>
+                            </div>
+                        </div>
+                        <div className="pt-2 border-t border-blue-500/10">
+                            <Label className="text-[10px] text-zinc-500 mb-1.5 block">Cambiar responsable del caso:</Label>
+                            <Select 
+                                disabled={ticket.status === 'Terminado'} 
+                                value={ticket.assigneeId || ""} 
+                                onValueChange={handleReassign}
+                            >
+                                <SelectTrigger className={`h-8 bg-black/40 border-white/5 text-xs text-zinc-300 ${ticket.status === 'Terminado' ? 'opacity-50' : ''}`}>
+                                    <SelectValue placeholder="Seleccionar técnico..." />
+                                </SelectTrigger>
+                                <SelectContent className="bg-zinc-900 border-white/10">
+                                    {profiles.filter(u => u.role === 'Técnico' || u.role === 'Administrador Full').map(u => (
+                                        <SelectItem key={u.id} value={u.id} className="text-xs focus:bg-blue-500/20 focus:text-blue-200">
+                                            {u.name} ({u.empresa})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
       )}
     </div>
