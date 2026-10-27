@@ -245,6 +245,25 @@ export async function sendTicketNotification(
             })
         );
 
+        // 5. Enviar Notificaciones Push a dispositivos móviles (Android / iOS)
+        const pushTargetUserIds: string[] = [];
+        if ((targetRole === 'submitter' || targetRole === 'both') && submitter?.id) {
+            pushTargetUserIds.push(submitter.id);
+        }
+        if ((targetRole === 'assignee' || targetRole === 'both') && assignee?.id) {
+            pushTargetUserIds.push(assignee.id);
+        }
+
+        const { sendPushToUser } = await import('./push');
+        for (const uid of pushTargetUserIds) {
+            sendPushToUser(
+                uid,
+                `Ticket #${ticketCode}: ${actionType}`,
+                `Requerimiento "${ticket.subject}". Estado: ${ticket.status}.`,
+                `/dashboard`
+            ).catch(err => console.error("Error al enviar push notification:", err));
+        }
+
         return { success: true };
     } catch (error) {
         console.error("Error al procesar la notificación de correo:", error);
