@@ -40,6 +40,28 @@ const statusColorMap: Record<string, string> = {
 
 import { getProfilesAction } from "@/app/actions/profiles";
 
+function playChatNotificationSound() {
+  if (typeof window === "undefined") return;
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.16);
+  } catch {
+    // Audio autoplay restrictions
+  }
+}
+
 export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   const supabase = createClient();
   const { toast } = useToast();
@@ -58,6 +80,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   const [showFullDesc, setShowFullDesc] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<any>(null);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
 
@@ -158,12 +181,22 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
         }
 
         if (notesResult.success && notesResult.data) {
-            setNotes(notesResult.data.map((n: any) => ({
+            const mapped = notesResult.data.map((n: any) => ({
                 ...n,
                 ticketId: n.ticket_id,
                 authorId: n.author_id,
                 createdAt: new Date(n.created_at),
-            })));
+            }));
+
+            setNotes((prevNotes: Note[]) => {
+                if (
+                    prevNotes.length === mapped.length &&
+                    prevNotes.every((n, i) => n.id === mapped[i].id && n.content === mapped[i].content)
+                ) {
+                    return prevNotes;
+                }
+                return mapped;
+            });
         }
     } catch (err) {
         console.error("Error loading ticket details:", err);
@@ -177,6 +210,44 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
       if (data?.user) setCurrentUserId(data.user.id);
     });
     fetchData(true);
+
+    // Canal WebSockets en tiempo real
+    const channel = supabase.channel(`ticket-room-${ticketId}`, {
+      config: { broadcast: { self: false } }
+    });
+
+    channel
+      .on('broadcast', { event: 'new_message' }, () => {
+        fetchData(false);
+        playChatNotificationSound();
+      })
+      .on('broadcast', { event: 'ticket_status_updated' }, () => {
+        fetchData(false);
+        if (onUpdate) onUpdate();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notes', filter: `ticket_id=eq.${ticketId}` }, () => {
+        fetchData(false);
+        playChatNotificationSound();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets', filter: `id=eq.${ticketId}` }, () => {
+        fetchData(false);
+        if (onUpdate) onUpdate();
+      })
+      .subscribe();
+
+    channelRef.current = channel;
+
+    // Sincronización silenciosa periódica de respaldo (cada 3.5 segundos)
+    const syncInterval = setInterval(() => {
+      fetchData(false);
+    }, 3500);
+
+    return () => {
+      clearInterval(syncInterval);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
+    };
   }, [ticketId]);
 
   if (loading) {
@@ -253,6 +324,11 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
         const result = await createNoteAction(ticketId, userData.user.id, tempMessage);
 
         if (result.success) {
+            channelRef.current?.send({
+                type: 'broadcast',
+                event: 'new_message',
+                payload: { ticketId, authorId: userData.user.id, content: tempMessage }
+            });
             fetchData(false); // Este re-fetch silencioso reemplazará el note temporal por el permanente
             if (onUpdate) onUpdate();
         } else {
@@ -283,6 +359,13 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             await createNoteAction(ticketId, userData.user.id, `[SISTEMA] Caso reasignado a técnico especialista: ${newTechName}`);
         }
 
+        channelRef.current?.send({
+            type: 'broadcast',
+            event: 'ticket_status_updated',
+            payload: { newAssigneeId }
+        });
+
+        fetchData(false);
         if (onUpdate) onUpdate();
         toast({ title: "Técnico reasignado", description: `Responsable actualizado a ${newTechName}.` });
     } else {
@@ -309,6 +392,18 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                 await createNoteAction(ticketId, userData.user.id, `[SISTEMA] ${autoMessage}`);
             }
         }
+
+        channelRef.current?.send({
+            type: 'broadcast',
+            event: 'ticket_status_updated',
+            payload: { newStatus }
+        });
+        channelRef.current?.send({
+            type: 'broadcast',
+            event: 'new_message',
+            payload: { ticketId, status: newStatus }
+        });
+
         fetchData(false); // Refresco en segundo plano
         if (onUpdate) onUpdate();
         toast({ title: "Estado actualizado", description: `El ticket ahora está "${newStatus}".` });
@@ -362,6 +457,14 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             >
                 <MessageSquare className="w-3.5 h-3.5" />
                 <span>Chat y Conversación</span>
+                <span className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                    activeTab === "chat" 
+                        ? "bg-black/20 text-emerald-950 border border-black/20" 
+                        : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                }`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    En vivo
+                </span>
                 {notes.length > 0 && (
                     <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
                         activeTab === "chat" ? "bg-black/30 text-black font-black" : "bg-white/10 text-zinc-300"

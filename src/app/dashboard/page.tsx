@@ -112,6 +112,10 @@ export default function DashboardRootPage() {
 
     useEffect(() => {
         fetchData();
+        const pollInterval = setInterval(() => {
+            fetchData();
+        }, 5000);
+        return () => clearInterval(pollInterval);
     }, [fetchData, refreshCount]);
 
     const handleUpdate = React.useCallback(() => {
