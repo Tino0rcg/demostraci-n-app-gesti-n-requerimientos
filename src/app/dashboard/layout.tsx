@@ -112,7 +112,7 @@ export default async function DashboardLayout({
             <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-60">
                 <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-white/10 bg-[#030712] px-4 pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-3 sm:py-0 sm:h-16 sm:static sm:border-0 sm:bg-transparent sm:px-6">
                     {/* Logo (Visible en móvil) */}
-                    <div className="flex items-center sm:hidden">
+                    <div className="flex items-center sm:hidden translate-y-1.5">
                         <Link href="/dashboard" className="flex items-center">
                             <Logo />
                         </Link>
