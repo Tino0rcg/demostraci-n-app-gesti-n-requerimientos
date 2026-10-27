@@ -55,6 +55,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   const [activeTab, setActiveTab] = useState<"chat" | "detalles">("chat");
   const [showFullDesc, setShowFullDesc] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = (smooth = false) => {
     if (chatScrollRef.current) {
