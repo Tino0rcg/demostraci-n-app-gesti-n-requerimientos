@@ -33,13 +33,17 @@ export function matchesSpecialty(specialty: string, category: string, serviceNam
         return true;
     }
 
-    // 2. Mapeo semántico de categorías estándar de TI a especialidades
+    // 2. Mapeo semántico de categorías oficiales de TI a especialidades
     const specialtyKeywordMap: Record<string, string[]> = {
-        redes: ['red', 'redes', 'conectividad', 'servidor', 'servidores', 'telecomunicaciones', 'cisco', 'wifi', 'enlace'],
-        hardware: ['hardware', 'infraestructura', 'equipo', 'impresora', 'computador', 'componente', 'pieza', 'fija'],
-        software: ['software', 'sistema', 'sistemas', 'aplicacion', 'aplicaciones', 'desarrollo', 'nivel 1', 'ofimatica', 'correo'],
-        accesos: ['acceso', 'accesos', 'seguridad', 'ciberseguridad', 'contrasena', 'permisos', 'usuario'],
-        seguridad: ['seguridad', 'ciberseguridad', 'firewall', 'antivirus', 'acceso', 'accesos']
+        'equipos ti': ['equipo', 'equipos', 'computador', 'notebook', 'laptop', 'impresora', 'periferico', 'hardware'],
+        'hardware': ['equipo', 'equipos', 'computador', 'notebook', 'laptop', 'impresora', 'periferico', 'hardware'],
+        'software': ['software', 'sistema', 'sistemas', 'windows', 'macos', 'linux', 'ofimatica', 'office', 'aplicacion', 'driver'],
+        'redes': ['red', 'redes', 'conectividad', 'internet', 'lan', 'wifi', 'wi-fi', 'vpn', 'router', 'switch', 'enlace'],
+        'cuentas y colaboracion': ['cuenta', 'usuario', 'contrasena', 'credencial', 'permiso', 'acceso', 'correo', 'm365', 'google', 'teams'],
+        'cuentas': ['cuenta', 'usuario', 'contrasena', 'permiso', 'acceso'],
+        'infraestructura y seguridad': ['servidor', 'servidores', 'infraestructura', 'respaldo', 'backup', 'recuperacion', 'antivirus', 'seguridad', 'firewall'],
+        'seguridad': ['antivirus', 'seguridad', 'ciberseguridad', 'firewall', 'amenaza'],
+        'sistemas empresariales': ['erp', 'crm', 'facturacion', 'web', 'cloud', 'saas', 'base de datos', 'corporativo'],
     };
 
     for (const [keyCategory, keywords] of Object.entries(specialtyKeywordMap)) {

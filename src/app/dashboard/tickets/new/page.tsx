@@ -16,11 +16,14 @@ import {
     SelectContent, 
     SelectItem, 
     SelectTrigger, 
-    SelectValue 
+    SelectValue,
+    SelectGroup,
+    SelectLabel
 } from "@/components/ui/select";
-import { ChevronLeft, Save, Sparkles, Clock, ImagePlus, X, ImageIcon } from "lucide-react";
+import { ChevronLeft, Save, Sparkles, Clock, ImagePlus, X, ImageIcon, ShieldCheck, Timer } from "lucide-react";
 import { uploadImageAction } from "@/app/actions/tickets";
 import Link from "next/link";
+import { getServiceResponseSla } from "@/lib/sla-utils";
 
 import { getServicesAction } from "@/app/actions/services";
 
@@ -173,27 +176,43 @@ export default function NewTicketPage() {
                                 <SelectTrigger className="bg-black/40 border-white/10 text-white h-11">
                                     <SelectValue placeholder="Selecciona el servicio afectado..." />
                                 </SelectTrigger>
-                                <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                                    {services.map(svc => (
-                                        <SelectItem key={svc.id} value={svc.id}>
-                                            {svc.name}
-                                        </SelectItem>
+                                <SelectContent className="bg-zinc-900 border-white/10 text-white max-h-[350px]">
+                                    {Array.from(new Set(services.map(s => s.category))).map(cat => (
+                                        <SelectGroup key={cat}>
+                                            <SelectLabel className="text-primary font-black uppercase text-[10px] tracking-widest px-2 py-1.5 bg-white/5 rounded my-1">
+                                                {cat}
+                                            </SelectLabel>
+                                            {services.filter(s => s.category === cat).map(svc => (
+                                                <SelectItem key={svc.id} value={svc.id} className="text-xs sm:text-sm pl-4">
+                                                    {svc.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
                                     ))}
                                 </SelectContent>
                             </Select>
                             
                             {currentService && (
-                                <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20 flex flex-col gap-2">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-black uppercase tracking-widest text-primary">Compromiso SLA Nivel {currentService.priority}</span>
-                                        <div className="flex items-center gap-2 text-white font-bold text-sm">
-                                            <Clock className="h-4 w-4 text-primary" />
-                                            {currentService.sla_hours} Horas Máximo
+                                <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20 flex flex-col gap-3">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-primary/10 pb-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-black uppercase tracking-widest text-primary">Nivel de Criticidad {currentService.priority}</span>
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white font-mono font-bold">{currentService.category}</span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-xs font-bold">
+                                            <div className="flex items-center gap-1.5 text-cyan-400">
+                                                <Timer className="h-3.5 w-3.5" />
+                                                <span>Respuesta: {getServiceResponseSla(currentService.name)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-primary">
+                                                <Clock className="h-3.5 w-3.5" />
+                                                <span>Resolución: {currentService.sla_hours} h máx.</span>
+                                            </div>
                                         </div>
                                     </div>
                                     <p className="text-[11px] text-zinc-400 leading-relaxed italic">
-                                        Este requerimiento se categoriza como <span className="text-white font-bold">{currentService.category}</span>. 
-                                        El tiempo de respuesta se rige bajo la cláusula técnica de criticidad {currentService.priority}.
+                                        El tiempo de primera atención y diagnóstico técnico tiene como objetivo máximo <strong className="text-white not-italic">{getServiceResponseSla(currentService.name)}</strong>. 
+                                        El plazo de resolución técnica definitiva bajo ANS es de <strong className="text-white not-italic">{currentService.sla_hours} horas hábiles</strong>.
                                     </p>
                                 </div>
                             )}

@@ -28,3 +28,26 @@ export function getSlaStatus(ticket: Ticket): { color: string; label: string } {
         }
     }
 }
+
+export const SERVICE_RESPONSE_SLA_MAP: Record<string, string> = {
+    'Computadores y notebooks': '2 h',
+    'Impresoras y periféricos': '2 h',
+    'Sistemas operativos': '2 h',
+    'Aplicaciones y software corporativo': '2 h',
+    'Internet y conectividad': '1 h',
+    'Redes LAN y Wi-Fi': '1 h',
+    'VPN y acceso remoto': '1 h',
+    'Correo electrónico y Microsoft 365 / Google Workspace': '1 h',
+    'Cuentas de usuario y contraseñas': '1 h',
+    'Permisos y accesos': '2 h',
+    'Servidores e infraestructura TI': '1 h',
+    'Respaldos y recuperación de datos': '1 h',
+    'Antivirus y seguridad informática': '30 min',
+    'ERP, CRM y sistemas corporativos': '2 h',
+    'Aplicaciones web y servicios cloud': '2 h',
+};
+
+export function getServiceResponseSla(serviceName: string): string {
+    return SERVICE_RESPONSE_SLA_MAP[serviceName] || '1 h';
+}
+

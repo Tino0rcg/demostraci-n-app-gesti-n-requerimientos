@@ -598,10 +598,12 @@ export default function TecnicosPage() {
                                                 <SelectValue placeholder="Seleccionar rubro..." />
                                             </SelectTrigger>
                                             <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                                                <SelectItem value="Redes y Servidores">Redes y Servidores</SelectItem>
-                                                <SelectItem value="Hardware e Infraestructura">Hardware e Infraestructura</SelectItem>
-                                                <SelectItem value="Software y Sistemas">Software y Sistemas</SelectItem>
-                                                <SelectItem value="Seguridad y Accesos">Seguridad y Accesos</SelectItem>
+                                                <SelectItem value="Equipos TI">Equipos TI (Computadores, Impresoras, Periféricos)</SelectItem>
+                                                <SelectItem value="Software">Software (Sistemas Operativos, Apps Corporativas)</SelectItem>
+                                                <SelectItem value="Redes">Redes y Conectividad (LAN, Wi-Fi, VPN)</SelectItem>
+                                                <SelectItem value="Cuentas y colaboración">Cuentas y Colaboración (M365, Usuarios, Permisos)</SelectItem>
+                                                <SelectItem value="Infraestructura y seguridad">Infraestructura y Seguridad (Servidores, Backup, Antivirus)</SelectItem>
+                                                <SelectItem value="Sistemas empresariales">Sistemas Empresariales (ERP, CRM, Cloud)</SelectItem>
                                                 <SelectItem value="Soporte Nivel 1">Soporte Nivel 1 (General)</SelectItem>
                                                 <SelectItem value="Soporte Nivel 2">Soporte Nivel 2 (Avanzado)</SelectItem>
                                             </SelectContent>

@@ -27,8 +27,8 @@ import {
     Eye,
     Info,
     History,
-    Zap,
-    Shield
+    Shield,
+    Timer
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
@@ -53,11 +53,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
+import { getServiceResponseSla } from "@/lib/sla-utils";
 
 const iconMap: Record<string, any> = {
+    'Equipos TI': <HardDrive className="h-5 w-5" />,
+    'Software': <Settings className="h-5 w-5" />,
+    'Redes': <Wifi className="h-5 w-5" />,
+    'Cuentas y colaboración': <Lock className="h-5 w-5" />,
+    'Infraestructura y seguridad': <Shield className="h-5 w-5" />,
+    'Sistemas empresariales': <BriefcaseBusiness className="h-5 w-5" />,
+    // Fallbacks
     Hardware: <HardDrive className="h-5 w-5" />,
-    Redes: <Wifi className="h-5 w-5" />,
-    Software: <Settings className="h-5 w-5" />,
     Accesos: <Lock className="h-5 w-5" />,
     Otro: <BriefcaseBusiness className="h-5 w-5" />,
 };
@@ -145,6 +151,9 @@ export default function ServiciosPage() {
 
         const priorityMap: Record<string, string> = {
             "4": "Crítica",
+            "8": "Alta",
+            "16": "Media",
+            "24": "Baja",
             "12": "Alta",
             "48": "Media",
             "72": "Baja"
@@ -295,10 +304,19 @@ export default function ServiciosPage() {
                                     </DropdownMenu>
                                 </div>
                             </div>
-                            <CardTitle className="mt-4 text-lg font-bold text-white leading-tight uppercase tracking-tight">{srv.name}</CardTitle>
-                            <CardDescription className="flex items-center gap-1.5 mt-2 font-medium text-primary">
-                                <Clock className="h-3.5 w-3.5" />
-                                SLA: {srv.sla_hours} Horas
+                            <CardTitle className="mt-4 text-base sm:text-lg font-bold text-white leading-tight uppercase tracking-tight flex items-center justify-between gap-2">
+                                <span>{srv.name}</span>
+                                {srv.codigo && <span className="text-[10px] font-mono text-primary font-bold px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 shrink-0">{srv.codigo}</span>}
+                            </CardTitle>
+                            <CardDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mt-2 font-medium">
+                                <span className="flex items-center gap-1.5 text-primary text-xs font-bold">
+                                    <Clock className="h-3.5 w-3.5" />
+                                    Resolución: {srv.sla_hours} h
+                                </span>
+                                <span className="flex items-center gap-1.5 text-cyan-400 text-xs font-bold font-mono">
+                                    <Timer className="h-3.5 w-3.5" />
+                                    Respuesta: {getServiceResponseSla(srv.name)}
+                                </span>
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -437,26 +455,27 @@ export default function ServiciosPage() {
                                                 <SelectValue placeholder="Categoría..." />
                                             </SelectTrigger>
                                             <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                                                <SelectItem value="Hardware">Hardware e Infraestructura</SelectItem>
-                                                <SelectItem value="Software">Software y Aplicaciones</SelectItem>
-                                                <SelectItem value="Redes">Telecomunicaciones y Redes</SelectItem>
-                                                <SelectItem value="Accesos">Accesos y Ciberseguridad</SelectItem>
-                                                <SelectItem value="Otro">Soporte General</SelectItem>
+                                                <SelectItem value="Equipos TI">Equipos TI</SelectItem>
+                                                <SelectItem value="Software">Software</SelectItem>
+                                                <SelectItem value="Redes">Redes</SelectItem>
+                                                <SelectItem value="Cuentas y colaboración">Cuentas y colaboración</SelectItem>
+                                                <SelectItem value="Infraestructura y seguridad">Infraestructura y seguridad</SelectItem>
+                                                <SelectItem value="Sistemas empresariales">Sistemas empresariales</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="text-zinc-400 text-xs">TLA / SLA Objetivo</Label>
+                                        <Label className="text-zinc-400 text-xs">SLA de Resolución</Label>
                                         <Select value={formData.slaHours} onValueChange={(v) => setFormData({...formData, slaHours: v})}>
                                             <SelectTrigger className="bg-white/5 border-white/10">
                                                 <SelectValue placeholder="SLA..." />
                                             </SelectTrigger>
                                             <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                                                <SelectItem value="4">4 Horas (Crítico / Emergencia)</SelectItem>
-                                                <SelectItem value="12">12 Horas (Alta Prioridad)</SelectItem>
-                                                <SelectItem value="48">48 Horas (Planificado / Media)</SelectItem>
-                                                <SelectItem value="72">72 Horas (Bajo impacto)</SelectItem>
+                                                <SelectItem value="4">4 Horas (Crítica / Urgente)</SelectItem>
+                                                <SelectItem value="8">8 Horas (Alta Prioridad)</SelectItem>
+                                                <SelectItem value="16">16 Horas (Media Prioridad)</SelectItem>
+                                                <SelectItem value="24">24 Horas (Baja Prioridad / Planificada)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <p className="text-[10px] text-muted-foreground mt-2 italic text-zinc-500">
