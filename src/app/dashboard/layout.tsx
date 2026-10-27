@@ -90,7 +90,7 @@ export default async function DashboardLayout({
                         width={160} 
                         height={70}
                         priority
-                        className="object-contain h-12 w-auto drop-shadow-[0_2px_10px_rgba(0,180,255,0.25)] filter brightness-110"
+                        className="object-contain h-12 w-auto"
                     />
                 </div>
                 
@@ -110,7 +110,7 @@ export default async function DashboardLayout({
 
             </aside>
             <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-60">
-                <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-white/10 bg-[#030712]/95 backdrop-blur-xl px-4 pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-3 sm:py-0 sm:h-16 sm:static sm:border-0 sm:bg-transparent sm:px-6">
+                <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-white/10 bg-[#030712] px-4 pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-3 sm:py-0 sm:h-16 sm:static sm:border-0 sm:bg-transparent sm:px-6">
                     {/* Logo (Visible en móvil) */}
                     <div className="flex items-center sm:hidden">
                         <Link href="/dashboard" className="flex items-center">
