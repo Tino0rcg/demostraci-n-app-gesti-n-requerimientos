@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Ticket } from "@/lib/definitions";
-import { sendTicketNotification } from "@/app/actions/notifications";
 import { useToast } from "@/hooks/use-toast";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";

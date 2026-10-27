@@ -73,20 +73,14 @@ export async function createTicketAction(data: {
             content: initialNote,
         });
 
-        // 3. Notificación por Correo al Solicitante
+        // 3. Notificación con PDF de Trazabilidad al Solicitante y al Técnico
         try {
-            await sendTicketNotification(ticket.id, 'Nuevo Requerimiento Registrado', 'submitter');
+            const eventDesc = assignment.technicianId 
+                ? 'Nuevo Requerimiento Registrado y Asignado para Atención' 
+                : 'Nuevo Requerimiento Registrado (Pendiente de Asignación)';
+            await sendTicketNotification(ticket.id, eventDesc, assignment.technicianId ? 'both' : 'submitter');
         } catch(e) {
-            console.error("Fallo de notificacion al solicitante:", e);
-        }
-
-        // 4. Si fue asignado a un técnico, notificar al técnico de inmediato
-        if (assignment.technicianId) {
-            try {
-                await sendTicketNotification(ticket.id, 'Nuevo Requerimiento Asignado para Atención', 'assignee');
-            } catch(e) {
-                console.error("Fallo de notificacion al tecnico asignado:", e);
-            }
+            console.error("Fallo de notificacion al registrar requerimiento:", e);
         }
 
         return { success: true };
@@ -153,26 +147,29 @@ export async function updateTicketAction(id: string, data: any) {
 
         // Determinar qué cambió para el mensaje de notificación
         let actionMessage = 'Actualización en el Ticket';
+        const isReassignment = data.tecnico_asignado_id !== undefined && oldTicket?.tecnico_asignado_id !== data.tecnico_asignado_id;
+
         if (data.status && oldTicket?.status !== data.status) {
-            actionMessage = `Cambio de Estado a ${data.status}`;
-        } else if (data.tecnico_asignado_id !== undefined && oldTicket?.tecnico_asignado_id !== data.tecnico_asignado_id) {
-            actionMessage = 'Reasignación de Técnico';
+            if (data.status === 'En proceso') {
+                actionMessage = oldTicket?.status === 'Espera de aprobación' 
+                    ? 'Solución Rechazada por el Cliente (En Corrección)' 
+                    : 'Ticket En Proceso (Inicio de Trabajo Técnico)';
+            } else if (data.status === 'Espera de aprobación') {
+                actionMessage = 'Solución Propuesta (En Espera de Aprobación del Cliente)';
+            } else if (data.status === 'Terminado') {
+                actionMessage = 'Solución Validada y Aprobada (Ticket Terminado)';
+            } else {
+                actionMessage = `Cambio de Estado a "${data.status}"`;
+            }
+        } else if (isReassignment) {
+            actionMessage = 'Asignación / Reasignación de Técnico Responsable';
         }
 
-        // Lanzar Notificación al Cliente
+        // Lanzar Notificación con PDF de trazabilidad a AMBOS (Solicitante y Técnico)
         try {
-            await sendTicketNotification(id, actionMessage, 'submitter');
+            await sendTicketNotification(id, actionMessage, 'both');
         } catch(e) {
             console.error("Fallo de notificacion (update):", e);
-        }
-
-        // Si es reasignación de técnico, notificar también al nuevo técnico responsable
-        if (data.tecnico_asignado_id && oldTicket?.tecnico_asignado_id !== data.tecnico_asignado_id) {
-            try {
-                await sendTicketNotification(id, 'Has sido reasignado como responsable de este caso', 'assignee');
-            } catch(e) {
-                console.error("Fallo de notificacion al nuevo tecnico:", e);
-            }
         }
 
         return { success: true };

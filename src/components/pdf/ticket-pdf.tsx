@@ -78,14 +78,20 @@ export const TicketPDF = ({ ticket, notes, submitterName, assigneeName }: Ticket
           <Text style={{ fontSize: 10, color: '#a1a1aa', fontStyle: 'italic' }}>Sin actividades registradas.</Text>
         ) : (
           notes.map((n, i) => {
+            const isSystem = n.content.trim().startsWith('[SISTEMA]');
+            const cleanContent = isSystem ? n.content.replace('[SISTEMA]', '').trim() : n.content;
             const esTech = n.authorId === ticket.assigneeId;
+            const authorName = isSystem
+              ? 'Sistema Automático'
+              : (n.authorId === ticket.submitterId ? `${submitterName} (Solicitante)` : (esTech ? `${assigneeName} (Técnico)` : 'Soporte'));
+
             return (
-              <View key={i} style={{ ...styles.messageContainer, backgroundColor: esTech ? '#f0f9ff' : 'transparent', padding: esTech ? 10 : 0 }}>
+              <View key={i} style={{ ...styles.messageContainer, backgroundColor: isSystem ? '#fafafa' : (esTech ? '#f0f9ff' : 'transparent'), padding: (isSystem || esTech) ? 8 : 4, borderRadius: 4 }}>
                 <View style={styles.msgHeader}>
-                  <Text style={styles.msgAuthor}>{n.authorId === 'USR-1' ? 'Sistema Automático' : (n.authorId === 'USR-3' ? submitterName : assigneeName)}</Text>
+                  <Text style={{ ...styles.msgAuthor, color: isSystem ? '#64748b' : (esTech ? '#0284c7' : '#18181b') }}>{authorName}</Text>
                   <Text style={styles.msgTime}>{format(n.createdAt, "dd/MM/yyyy HH:mm")}</Text>
                 </View>
-                <Text style={styles.msgContent}>{n.content}</Text>
+                <Text style={styles.msgContent}>{cleanContent}</Text>
               </View>
             )
           })
