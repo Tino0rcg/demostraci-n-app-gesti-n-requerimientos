@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Ticket, User, TicketPriority, TicketStatus } from "@/lib/definitions";
 import { format } from "date-fns";
-import { Clock, AlertCircle, Loader2, PlusCircle } from "lucide-react";
+import { Clock, AlertCircle, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -79,9 +79,9 @@ export default function DashboardRootPage() {
     const [loading, setLoading] = useState(true);
     const [refreshCount, setRefreshCount] = useState(0);
 
-    const fetchData = React.useCallback(async () => {
+    const fetchData = React.useCallback(async (isInitial = false) => {
         try {
-            setLoading(true);
+            if (isInitial) setLoading(true);
             const resultTickets = await getTicketsAction();
             if (resultTickets.success && resultTickets.data) {
                 const now = new Date();
@@ -106,14 +106,14 @@ export default function DashboardRootPage() {
         } catch (err) {
             console.error("Error fetching Kanban data:", err);
         } finally {
-            setLoading(false);
+            if (isInitial) setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchData();
+        fetchData(true);
         const pollInterval = setInterval(() => {
-            fetchData();
+            fetchData(false);
         }, 5000);
         return () => clearInterval(pollInterval);
     }, [fetchData, refreshCount]);
@@ -134,7 +134,6 @@ export default function DashboardRootPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {loading && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
                     <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-black font-bold shadow-[0_0_20px_rgba(59,130,246,0.3)]">
                         <Link href="/dashboard/tickets/new" className="flex items-center gap-2">
                             <PlusCircle className="h-4 w-4" />
