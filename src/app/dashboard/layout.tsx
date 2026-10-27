@@ -85,11 +85,12 @@ export default async function DashboardLayout({
             <aside className="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r border-white/10 glass-panel sm:flex">
                 <div className="flex px-6 py-4 items-center justify-center">
                     <Image 
-                        src="https://github.com/Tino0rcg/imagenes-pagina-online-2.0/blob/main/LOGO%20ONLINE%20SYSTEM%20NORMAL.png?raw=true" 
+                        src="/logo-online-system.png" 
                         alt="Online System Logo" 
-                        width={140} 
-                        height={80}
-                        className="object-contain"
+                        width={160} 
+                        height={70}
+                        priority
+                        className="object-contain h-12 w-auto drop-shadow-[0_2px_10px_rgba(0,180,255,0.25)] filter brightness-110"
                     />
                 </div>
                 

@@ -10,10 +10,12 @@ import {
     Wrench,
     Users,
     Menu,
-    Ticket
+    Ticket,
+    LogOut
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { NavLinks } from "@/components/dashboard/nav-links";
+import { signOut } from "@/app/login/actions";
 
 export function BottomNav({ role }: { role?: string }) {
     const pathname = usePathname();
@@ -135,8 +137,19 @@ export function BottomNav({ role }: { role?: string }) {
                             <Ticket className="h-5 w-5 text-primary" />
                             Menú de Navegación
                         </SheetTitle>
-                        <div className="flex flex-col gap-1 overflow-y-auto max-h-[60vh] pr-1 custom-scrollbar">
+                        <div className="flex flex-col gap-1 overflow-y-auto max-h-[50vh] pr-1 custom-scrollbar">
                             <NavLinks role={role} isMobile={true} />
+                        </div>
+                        <div className="mt-4 pt-3 border-t border-white/10">
+                            <form action={signOut}>
+                                <button
+                                    type="submit"
+                                    className="w-full min-h-[44px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 active:scale-95 font-bold border border-red-500/30 transition-all text-sm cursor-pointer shadow-md"
+                                >
+                                    <LogOut className="h-4 w-4" />
+                                    <span>Cerrar Sesión</span>
+                                </button>
+                            </form>
                         </div>
                     </SheetContent>
                 </Sheet>

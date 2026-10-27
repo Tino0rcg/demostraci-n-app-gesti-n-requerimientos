@@ -5,12 +5,12 @@ export function Logo({ className }: { className?: string }) {
   return (
     <div className={cn('flex items-center', className)}>
       <Image 
-        src="https://github.com/Tino0rcg/imagenes-pagina-online-2.0/blob/main/LOGO%20ONLINE%20SYSTEM%20NORMAL.png?raw=true" 
+        src="/logo-online-system.png" 
         alt="Online System Logo" 
-        width={140} 
-        height={48}
+        width={180} 
+        height={80}
         priority
-        className="object-contain h-9 w-auto max-w-[150px]"
+        className="object-contain h-10 sm:h-11 w-auto max-w-[170px] drop-shadow-[0_2px_10px_rgba(0,180,255,0.25)] filter brightness-110"
       />
     </div>
   );
