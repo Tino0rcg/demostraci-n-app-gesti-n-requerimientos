@@ -291,7 +291,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 w-full overflow-hidden">
+    <div data-no-pull-to-refresh="true" className="flex flex-col flex-1 min-h-0 w-full overflow-hidden">
       {/* Top Header Bar: Compact & Mobile-Safe */}
       <div className="flex-none pb-2 border-b border-white/10">
         <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 pr-12 flex-wrap">
@@ -360,7 +360,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
 
       {/* VISTA 1: CHAT Y BITÁCORA */}
       {activeTab === "chat" && (
-        <div className="flex flex-col flex-1 min-h-0 w-full mt-2">
+        <div data-chat-container="true" data-no-pull-to-refresh="true" className="flex flex-col flex-1 min-h-0 w-full mt-2">
             {/* Resumen colapsable de la descripción del problema */}
             <div className="p-2.5 bg-primary/5 border border-primary/20 rounded-xl text-xs flex-none mb-2">
                 <div className="flex items-center justify-between">
@@ -452,6 +452,8 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             {/* Zona de Chat con SCROLL NATIVO Y FLUIDO (sin pull-to-refresh) */}
             <div 
               ref={chatScrollRef}
+              data-chat-messages="true"
+              data-no-pull-to-refresh="true"
               className="flex-1 overflow-y-auto overscroll-contain min-h-0 pr-1 custom-scrollbar bg-black/20 border border-white/5 rounded-xl p-3 shadow-inner"
               style={{ overscrollBehaviorY: 'contain', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
             >
