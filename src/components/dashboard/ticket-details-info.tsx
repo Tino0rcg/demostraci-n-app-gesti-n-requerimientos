@@ -53,6 +53,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   const [timeLeftStr, setTimeLeftStr] = useState<string>("");
   const [isOverdueSla, setIsOverdueSla] = useState<boolean>(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<User | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"chat" | "detalles">("chat");
   const [showFullDesc, setShowFullDesc] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
@@ -142,11 +143,15 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             });
         }
 
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+            setCurrentUserId(userData.user.id);
+        }
+
         if (profilesResult.success && profilesResult.data) {
             const loadedProfiles = profilesResult.data as User[];
             setProfiles(loadedProfiles);
-            const { data: userData } = await supabase.auth.getUser();
-            if (userData.user) {
+            if (userData?.user) {
                 const curUsr = loadedProfiles.find(u => u.id === userData.user.id);
                 setCurrentUserProfile(curUsr || null);
             }
@@ -168,6 +173,9 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   }
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) setCurrentUserId(data.user.id);
+    });
     fetchData(true);
   }, [ticketId]);
 
@@ -189,6 +197,25 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   const submitter = profiles.find((u) => u.id === ticket.submitterId);
   const assignee = profiles.find((u) => u.id === ticket.assigneeId);
   const sla = getSlaStatus(ticket);
+
+  // El botón de aprobar/rechazar solo le debe salir al usuario que ingresó el requerimiento
+  const isSubmitter = Boolean(
+    ticket && (
+      (currentUserId && ticket.submitterId === currentUserId) ||
+      (currentUserProfile?.id && ticket.submitterId === currentUserProfile.id)
+    )
+  );
+
+  // Técnico a cargo del ticket o administrador full
+  const isTechnicianInCharge = Boolean(
+    ticket && (
+      currentUserProfile?.role === 'Administrador Full' ||
+      (currentUserProfile?.role === 'Técnico' && (
+        (ticket.assigneeId && (ticket.assigneeId === currentUserProfile.id || (currentUserId && ticket.assigneeId === currentUserId))) ||
+        !ticket.assigneeId
+      ))
+    )
+  );
 
   const imageMarker = "[ADJUNTO_IMAGEN]: ";
   const hasImage = ticket.description?.includes(imageMarker);
@@ -361,8 +388,8 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
         </div>
       </div>
 
-      {/* Banner de Decisión de Solución (Aprobar o Rechazar) */}
-      {ticket.status === 'Espera de aprobación' && (currentUserProfile?.id === ticket.submitterId || currentUserProfile?.role === 'Administrador Full' || currentUserProfile?.role === 'Administrador Cliente') && (
+      {/* Banner de Decisión de Solución: SOLO al usuario que ingresó el requerimiento */}
+      {ticket.status === 'Espera de aprobación' && isSubmitter && (
         <div className="flex-none mt-2.5 p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-emerald-500/10 to-transparent border border-amber-500/30 shadow-lg">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -397,6 +424,50 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                     </Button>
                 </div>
             </div>
+        </div>
+      )}
+
+      {/* Banner informativo para técnicos o admins cuando está en espera de aprobación (sin botones de aprobar/rechazar) */}
+      {ticket.status === 'Espera de aprobación' && !isSubmitter && (
+        <div className="flex-none mt-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0">
+                <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
+            </div>
+            <div className="flex flex-col min-w-0">
+                <span className="text-xs font-semibold text-amber-300">
+                    En espera de validación del cliente
+                </span>
+                <span className="text-[11px] text-zinc-400">
+                    El usuario que ingresó este ticket ({submitter?.name || 'Cliente'}) debe aprobar o rechazar la solución.
+                </span>
+            </div>
+        </div>
+      )}
+
+      {/* Banner para el técnico a cargo cuando el ticket está en proceso */}
+      {ticket.status === 'En proceso' && isTechnicianInCharge && (
+        <div className="flex-none mt-2.5 p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
+                <div className="h-7 w-7 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shrink-0">
+                    <Play className="h-3.5 w-3.5 text-blue-400" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-semibold text-blue-300">
+                        Atendiendo requerimiento
+                    </span>
+                    <span className="text-[11px] text-zinc-400">
+                        Al concluir tu trabajo técnico, envíalo a aprobación del cliente:
+                    </span>
+                </div>
+            </div>
+            <Button 
+                size="sm"
+                disabled={isUpdating}
+                onClick={() => handleAction('Espera de aprobación', 'Trabajo finalizado por el técnico. Enviado al cliente para revisión y control de calidad.')}
+                className="min-h-[34px] text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white border border-amber-500/50 cursor-pointer shrink-0"
+            >
+                <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Terminado (Espera de aprobación)
+            </Button>
         </div>
       )}
 
@@ -669,36 +740,36 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 shadow-lg space-y-3">
                 <h4 className="text-[11px] font-bold uppercase tracking-widest text-primary">Flujo de Trabajo Operativo</h4>
                 <div className="flex flex-col gap-2">
-                    {ticket.status === 'Ingresado' && (currentUserProfile?.role === 'Técnico' || currentUserProfile?.role === 'Administrador Full') && (
+                    {ticket.status === 'Ingresado' && isTechnicianInCharge && (
                         <Button disabled={isUpdating} onClick={() => handleAction('En proceso', 'Ticket marcado como "En Proceso" por el técnico. Comenzando a trabajar en la solución.')} className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30">
                             <Play className="w-4 h-4 mr-2" /> Iniciar Trabajo (Agente)
                         </Button>
                     )}
                     
-                    {ticket.status === 'En proceso' && (currentUserProfile?.role === 'Técnico' || currentUserProfile?.role === 'Administrador Full') && (
-                        <Button disabled={isUpdating} onClick={() => handleAction('Espera de aprobación', 'Trabajo finalizado por el técnico. Enviado al cliente para revisión y control de calidad.')} className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30">
-                            <AlertCircle className="w-4 h-4 mr-2" /> Enviar a Revisión (Al Cliente)
+                    {ticket.status === 'En proceso' && isTechnicianInCharge && (
+                        <Button disabled={isUpdating} onClick={() => handleAction('Espera de aprobación', 'Trabajo finalizado por el técnico. Enviado al cliente para revisión y control de calidad.')} className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30">
+                            <CheckCircle2 className="w-4 h-4 mr-2" /> Terminado (Enviar a espera de aprobación)
                         </Button>
                     )}
 
-                    {ticket.status === 'Espera de aprobación' && (currentUserProfile?.id === ticket.submitterId) && (
+                    {ticket.status === 'Espera de aprobación' && isSubmitter && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
                             <Button disabled={isUpdating} onClick={() => handleAction('Terminado', 'Solución validada y aceptada por el cliente. Ticket cerrado exitosamente.')} className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30">
                                 <CheckCircle2 className="w-4 h-4 mr-2" /> Aprobar Solución
                             </Button>
-                            <div className="w-full">
-                                <Button 
-                                    disabled={isUpdating} 
-                                    onClick={() => {
-                                        const reason = window.prompt("Indica el motivo del rechazo (opcional):");
-                                        if (reason === null) return;
-                                        handleAction('En proceso', reason.trim() ? `Solución RECHAZADA por el cliente. Motivo: ${reason}` : 'Solución rechazada por el cliente. Se solicita nueva revisión.');
-                                    }} 
-                                    className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 cursor-pointer"
-                                >
-                                    <XCircle className="w-4 h-4 mr-2" /> Rechazar Solución
-                                </Button>
-                            </div>
+                            <Button 
+                                disabled={isUpdating} 
+                                onClick={() => setIsRejectDialogOpen(true)} 
+                                className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 cursor-pointer"
+                            >
+                                <XCircle className="w-4 h-4 mr-2" /> Rechazar Solución
+                            </Button>
+                        </div>
+                    )}
+
+                    {ticket.status === 'Espera de aprobación' && !isSubmitter && (
+                        <div className="text-xs sm:text-sm font-medium text-amber-400 flex items-center justify-center p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                            <AlertCircle className="w-4 h-4 mr-2 shrink-0" /> En espera de validación y aprobación por parte del cliente ({submitter?.name || "Solicitante"}).
                         </div>
                     )}
 
