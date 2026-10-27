@@ -12,6 +12,7 @@ import { getSlaStatus } from "@/lib/sla-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { createClient } from "@/lib/supabase/client";
@@ -56,6 +57,8 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   const [showFullDesc, setShowFullDesc] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   const scrollToBottom = (smooth = false) => {
     if (chatScrollRef.current) {
@@ -357,6 +360,45 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             </button>
         </div>
       </div>
+
+      {/* Banner de Decisión de Solución (Aprobar o Rechazar) */}
+      {ticket.status === 'Espera de aprobación' && (currentUserProfile?.id === ticket.submitterId || currentUserProfile?.role === 'Administrador Full' || currentUserProfile?.role === 'Administrador Cliente') && (
+        <div className="flex-none mt-2.5 p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-emerald-500/10 to-transparent border border-amber-500/30 shadow-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="h-9 w-9 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
+                        <AlertCircle className="h-4 w-4 text-amber-400" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-bold text-white tracking-wide">
+                            El técnico concluyó la solución
+                        </span>
+                        <span className="text-[11px] text-zinc-400">
+                            ¿La solución fue satisfactoria? Puedes validarla o rechazarla aquí:
+                        </span>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                    <Button 
+                        size="sm"
+                        disabled={isUpdating} 
+                        onClick={() => handleAction('Terminado', 'Solución validada y aceptada por el cliente. Ticket cerrado exitosamente.')} 
+                        className="flex-1 sm:flex-none min-h-[38px] text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 border border-emerald-500/50 cursor-pointer"
+                    >
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Aprobar Solución
+                    </Button>
+                    <Button 
+                        size="sm"
+                        disabled={isUpdating} 
+                        onClick={() => setIsRejectDialogOpen(true)} 
+                        className="flex-1 sm:flex-none min-h-[38px] text-xs font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 cursor-pointer"
+                    >
+                        <XCircle className="w-3.5 h-3.5 mr-1.5" /> Rechazar
+                    </Button>
+                </div>
+            </div>
+        </div>
+      )}
 
       {/* VISTA 1: CHAT Y BITÁCORA */}
       {activeTab === "chat" && (
@@ -710,6 +752,57 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             )}
         </div>
       )}
+
+      {/* Modal para ingresar motivo de rechazo */}
+      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+        <DialogContent className="max-w-md bg-zinc-950 border border-white/15 text-white p-5 rounded-2xl shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base text-red-400 font-bold">
+              <XCircle className="h-5 w-5" />
+              Rechazar Solución
+            </DialogTitle>
+            <DialogDescription className="text-xs text-zinc-400">
+              Indica qué ocurrió o qué faltó resolver para que el técnico continúe trabajando en el requerimiento.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-2">
+            <Textarea
+              placeholder="Ej: Aún persiste el problema al intentar conectarse..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              className="min-h-[100px] bg-black/40 border-white/10 text-sm p-3 rounded-xl focus:ring-1 focus:ring-red-500/50 resize-none"
+            />
+          </div>
+
+          <DialogFooter className="flex flex-row gap-2 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsRejectDialogOpen(false)}
+              className="border-white/10 text-zinc-300 hover:text-white"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={isUpdating}
+              onClick={async () => {
+                const reason = rejectReason.trim();
+                setIsRejectDialogOpen(false);
+                setRejectReason("");
+                await handleAction(
+                  'En proceso',
+                  reason ? `Solución RECHAZADA por el cliente. Motivo: ${reason}` : 'Solución rechazada por el cliente. Se solicita nueva revisión.'
+                );
+              }}
+              className="bg-red-600 hover:bg-red-500 text-white font-bold"
+            >
+              Confirmar Rechazo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
