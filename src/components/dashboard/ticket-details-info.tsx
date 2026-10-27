@@ -397,58 +397,6 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                 )}
             </div>
 
-            {/* Acciones Rápidas (Workflow) si el ticket requiere acción inmediata */}
-            {ticket.status === 'Ingresado' && (currentUserProfile?.role === 'Técnico' || currentUserProfile?.role === 'Administrador Full') && (
-                <div className="mb-2 flex-none">
-                    <Button 
-                        disabled={isUpdating} 
-                        onClick={() => handleAction('En proceso', 'Ticket marcado como "En Proceso" por el técnico. Comenzando a trabajar en la solución.')} 
-                        className="w-full min-h-[42px] text-xs font-bold bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/30 shadow-md"
-                    >
-                        <Play className="w-4 h-4 mr-2" /> Iniciar Trabajo en este Ticket
-                    </Button>
-                </div>
-            )}
-
-            {ticket.status === 'En proceso' && (currentUserProfile?.role === 'Técnico' || currentUserProfile?.role === 'Administrador Full') && (
-                <div className="mb-2 flex-none">
-                    <Button 
-                        disabled={isUpdating} 
-                        onClick={() => handleAction('Espera de aprobación', 'Trabajo finalizado por el técnico. Enviado al cliente para revisión y control de calidad.')} 
-                        className="w-full min-h-[42px] text-xs font-bold bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30 shadow-md"
-                    >
-                        <AlertCircle className="w-4 h-4 mr-2" /> Enviar a Revisión al Cliente
-                    </Button>
-                </div>
-            )}
-
-            {ticket.status === 'Espera de aprobación' && (currentUserProfile?.id === ticket.submitterId) && (
-                <div className="mb-2 flex-none p-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
-                    <p className="text-[11px] font-bold text-yellow-400 uppercase tracking-wider mb-2 text-center">
-                        El técnico ha concluido la solución. ¿Deseas aprobarla o rechazarla?
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 w-full">
-                        <Button 
-                            disabled={isUpdating} 
-                            onClick={() => handleAction('Terminado', 'Solución validada y aceptada por el cliente. Ticket cerrado exitosamente.')} 
-                            className="min-h-[42px] text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30"
-                        >
-                            <CheckCircle2 className="w-4 h-4 mr-1.5" /> Aprobar
-                        </Button>
-                        <Button 
-                            disabled={!newMessage.trim() || isUpdating} 
-                            onClick={() => {
-                                handleAction('En proceso', `Solución RECHAZADA por el cliente. Motivo: ${newMessage}`);
-                                setNewMessage("");
-                            }} 
-                            className="min-h-[42px] text-xs font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 disabled:opacity-50"
-                        >
-                            <XCircle className="w-4 h-4 mr-1.5" /> Rechazar
-                        </Button>
-                    </div>
-                </div>
-            )}
-
             {/* Zona de Chat con SCROLL NATIVO Y FLUIDO (sin pull-to-refresh) */}
             <div 
               ref={chatScrollRef}
@@ -548,7 +496,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             <div className="flex-none pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pb-0 mt-auto bg-background/95">
                 <div className="flex gap-2 items-center">
                     <Textarea
-                        placeholder={ticket.status === 'Espera de aprobación' ? "Explica el motivo (Si rechazas) o agradece (Si apruebas)..." : "Escribe un mensaje o responde..."}
+                        placeholder="Escribe un mensaje o responde..."
                         className="resize-none min-h-[46px] max-h-[120px] bg-black/40 border-white/10 text-base sm:text-sm py-2.5 px-3 rounded-xl focus:ring-1 focus:ring-primary/50"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
@@ -696,22 +644,18 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                             <Button disabled={isUpdating} onClick={() => handleAction('Terminado', 'Solución validada y aceptada por el cliente. Ticket cerrado exitosamente.')} className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30">
                                 <CheckCircle2 className="w-4 h-4 mr-2" /> Aprobar Solución
                             </Button>
-                            <div className="group relative w-full">
+                            <div className="w-full">
                                 <Button 
-                                    disabled={!newMessage.trim() || isUpdating} 
+                                    disabled={isUpdating} 
                                     onClick={() => {
-                                        handleAction('En proceso', `Solución RECHAZADA por el cliente. Motivo: ${newMessage}`);
-                                        setNewMessage("");
+                                        const reason = window.prompt("Indica el motivo del rechazo (opcional):");
+                                        if (reason === null) return;
+                                        handleAction('En proceso', reason.trim() ? `Solución RECHAZADA por el cliente. Motivo: ${reason}` : 'Solución rechazada por el cliente. Se solicita nueva revisión.');
                                     }} 
-                                    className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 disabled:opacity-50"
+                                    className="w-full min-h-[44px] text-xs sm:text-sm font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 cursor-pointer"
                                 >
                                     <XCircle className="w-4 h-4 mr-2" /> Rechazar Solución
                                 </Button>
-                                {!newMessage.trim() && (
-                                    <span className="block mt-1 text-[10px] text-red-400 text-center">
-                                        Escribe el motivo en el chat para poder rechazar
-                                    </span>
-                                )}
                             </div>
                         </div>
                     )}
