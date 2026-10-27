@@ -305,9 +305,8 @@ export default function ServiciosPage() {
                                     </DropdownMenu>
                                 </div>
                             </div>
-                            <CardTitle className="mt-4 text-base sm:text-lg font-bold text-white leading-tight uppercase tracking-tight flex items-center justify-between gap-2">
+                            <CardTitle className="mt-4 text-base sm:text-lg font-bold text-white leading-tight uppercase tracking-tight">
                                 <span>{srv.name}</span>
-                                {srv.codigo && <span className="text-[10px] font-mono text-primary font-bold px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 shrink-0">{srv.codigo}</span>}
                             </CardTitle>
                             <CardDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mt-2 font-medium">
                                 <span className="flex items-center gap-1.5 text-primary text-xs font-bold">
@@ -327,8 +326,8 @@ export default function ServiciosPage() {
                                     <span className="text-white font-semibold">{srv.category}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-xs">
-                                    <span className="text-muted-foreground">ID de Servicio</span>
-                                    <span className="font-mono text-zinc-500">{srv.id}</span>
+                                    <span className="text-muted-foreground">Prioridad Base</span>
+                                    <span className="text-zinc-300 font-medium">{srv.priority}</span>
                                 </div>
                             </div>
                         </CardContent>

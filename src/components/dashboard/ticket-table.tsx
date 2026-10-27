@@ -82,9 +82,9 @@ export function TicketTable({ tickets, allUsers }: { tickets: Ticket[], allUsers
 
   const columns: ColumnDef<Ticket>[] = React.useMemo(() => [
     {
-      accessorKey: "id",
-      header: () => <span className="hidden md:inline">Ticket ID</span>,
-      cell: ({ row }) => <Link href={`/dashboard/tickets`} className="hover:underline font-mono text-xs hidden md:inline">{row.getValue("id")}</Link>,
+      accessorKey: "codigo",
+      header: () => <span className="hidden md:inline">Código</span>,
+      cell: ({ row }) => <span className="font-mono font-bold text-xs text-primary hidden md:inline">{row.original.codigo || `#${row.original.id?.slice(0, 8)}`}</span>,
     },
     {
       accessorKey: "subject",
