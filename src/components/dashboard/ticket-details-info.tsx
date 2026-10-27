@@ -81,6 +81,9 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
+  const [typingUser, setTypingUser] = useState<{ id: string; name: string } | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTypingBroadcastRef = useRef<number>(0);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
 
@@ -100,6 +103,12 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   useEffect(() => {
     scrollToBottom();
   }, [notes, activeTab]);
+
+  useEffect(() => {
+    if (typingUser) {
+      scrollToBottom(true);
+    }
+  }, [typingUser]);
 
   useEffect(() => {
     if (!ticket) return;
@@ -218,14 +227,33 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
 
     channel
       .on('broadcast', { event: 'new_message' }, () => {
+        setTypingUser(null);
         fetchData(false);
         playChatNotificationSound();
+      })
+      .on('broadcast', { event: 'user_typing' }, (payload: any) => {
+        const senderId = payload.payload?.userId;
+        const myId = currentUserId || currentUserProfile?.id;
+        if (senderId && senderId !== myId) {
+          setTypingUser({
+            id: senderId,
+            name: payload.payload?.userName || 'El usuario'
+          });
+          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => {
+            setTypingUser(null);
+          }, 3200);
+        }
+      })
+      .on('broadcast', { event: 'stop_typing' }, () => {
+        setTypingUser(null);
       })
       .on('broadcast', { event: 'ticket_status_updated' }, () => {
         fetchData(false);
         if (onUpdate) onUpdate();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notes', filter: `ticket_id=eq.${ticketId}` }, () => {
+        setTypingUser(null);
         fetchData(false);
         playChatNotificationSound();
       })
@@ -244,6 +272,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
 
     return () => {
       clearInterval(syncInterval);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
@@ -326,6 +355,11 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
         if (result.success) {
             channelRef.current?.send({
                 type: 'broadcast',
+                event: 'stop_typing',
+                payload: { userId: userData.user.id }
+            });
+            channelRef.current?.send({
+                type: 'broadcast',
                 event: 'new_message',
                 payload: { ticketId, authorId: userData.user.id, content: tempMessage }
             });
@@ -339,6 +373,29 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
         }
     } finally {
         setSending(false);
+    }
+  };
+
+  const handleTyping = (text: string) => {
+    setNewMessage(text);
+
+    const now = Date.now();
+    if (text.trim().length > 0 && now - lastTypingBroadcastRef.current > 1500) {
+      lastTypingBroadcastRef.current = now;
+      channelRef.current?.send({
+        type: 'broadcast',
+        event: 'user_typing',
+        payload: {
+          userId: currentUserId || currentUserProfile?.id,
+          userName: currentUserProfile?.name || 'El usuario'
+        }
+      });
+    } else if (text.trim().length === 0) {
+      channelRef.current?.send({
+        type: 'broadcast',
+        event: 'stop_typing',
+        payload: { userId: currentUserId || currentUserProfile?.id }
+      });
     }
   };
 
@@ -702,6 +759,20 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                             </Fragment>
                         )
                     })}
+                    {/* Indicador de "escribiendo..." en tiempo real */}
+                    {typingUser && (
+                        <div className="flex items-center gap-2 py-1.5 px-0.5 text-xs text-zinc-400 animate-in fade-in duration-200">
+                            <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3.5 py-2 rounded-2xl rounded-bl-sm shadow-sm backdrop-blur-sm">
+                                <span className="font-bold text-zinc-200 text-xs">{typingUser.name}</span>
+                                <span className="text-[11px] text-zinc-400 font-medium">está escribiendo</span>
+                                <span className="inline-flex items-center gap-1 ml-0.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
+                                </span>
+                            </div>
+                        </div>
+                    )}
                     <div ref={messagesEndRef} />
                 </div>
             )}
@@ -715,7 +786,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                         placeholder="Escribe un mensaje o responde..."
                         className="resize-none min-h-[46px] max-h-[120px] bg-black/40 border-white/10 text-base sm:text-sm py-2.5 px-3 rounded-xl focus:ring-1 focus:ring-primary/50"
                         value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
+                        onChange={(e) => handleTyping(e.target.value)}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
