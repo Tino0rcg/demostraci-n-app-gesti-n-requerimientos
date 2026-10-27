@@ -22,6 +22,11 @@ if (vapidPublicKey && vapidPrivateKey) {
   );
 }
 
+export async function getVapidPublicKeyAction() {
+  const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BMsrFj0fv6tCbJ6y8-d56gfiAZTDY7AdbkUG4N0wuGfck6yLYkjaJrMXg6krqP2_qoYNysDryVJ8oJ70UFF4VF0';
+  return { success: true, publicKey: key };
+}
+
 export async function savePushSubscriptionAction(subscription: any, userId?: string) {
   try {
     const supabase = getAdminClient();

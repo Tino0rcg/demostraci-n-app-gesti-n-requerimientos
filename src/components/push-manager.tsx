@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { savePushSubscriptionAction } from "@/app/actions/push";
+import { savePushSubscriptionAction, getVapidPublicKeyAction } from "@/app/actions/push";
 import { Button } from "@/components/ui/button";
-import { BellRing, CheckCircle2, Share, X } from "lucide-react";
+import { BellRing, CheckCircle2, Share, AlertTriangle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const FALLBACK_VAPID_KEY = "BMsrFj0fv6tCbJ6y8-d56gfiAZTDY7AdbkUG4N0wuGfck6yLYkjaJrMXg6krqP2_qoYNysDryVJ8oJ70UFF4VF0";
+
 function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/\-/g, '+')
-    .replace(/_/g, '/');
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, "+").replace(/_/g, "/");
 
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
@@ -22,106 +22,178 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 export function PushManager() {
-  const [supported, setSupported] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission | 'unknown'>('unknown');
+  const [isSecure, setIsSecure] = useState(true);
+  const [permission, setPermission] = useState<NotificationPermission | "unknown">("unknown");
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
-    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
-    
+    setIsMounted(true);
+    setIsSecure(window.isSecureContext);
+
+    // Detección robusta de iOS (incluye iPads con iPadOS moderno que reportan MacIntel)
+    const ios =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+    // Detección de si la app corre como PWA instalada en la pantalla de inicio
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true;
+
     setIsIOS(ios);
     setIsStandalone(Boolean(standalone));
 
-    const hasPushSupport = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-    setSupported(hasPushSupport);
-
-    if ('Notification' in window) {
+    if ("Notification" in window) {
       setPermission(Notification.permission);
-      if (Notification.permission === 'granted') {
-        // Renovar silenciosamente la suscripción si ya está autorizado
-        registerAndSubscribe(false);
+      if (Notification.permission === "granted") {
+        // Suscribir silenciosamente si ya estaba autorizado
+        silentSubscribe();
       }
     }
   }, []);
 
-  const registerAndSubscribe = async (userGesture: boolean) => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-
+  const silentSubscribe = async () => {
     try {
-      if (userGesture) setIsSubscribing(true);
-
-      const registration = await navigator.serviceWorker.register('/sw.js');
+      if (!("serviceWorker" in navigator)) return;
+      const registration = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
 
-      let currentPerm = Notification.permission;
-      if (userGesture && currentPerm !== 'granted') {
-        currentPerm = await Notification.requestPermission();
-        setPermission(currentPerm);
-      }
-
-      if (currentPerm !== 'granted') {
-        if (userGesture) {
-          toast({
-            title: "Permiso denegado",
-            description: "No se otorgaron permisos para enviar notificaciones.",
-            variant: "destructive"
-          });
-        }
-        return;
-      }
-
-      const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!vapidPublicKey) {
-        console.warn("Falta NEXT_PUBLIC_VAPID_PUBLIC_KEY");
-        return;
-      }
-
-      const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+      let key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || FALLBACK_VAPID_KEY;
+      const convertedVapidKey = urlBase64ToUint8Array(key);
       let sub = await registration.pushManager.getSubscription();
 
       if (!sub) {
         sub = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: convertedVapidKey
+          applicationServerKey: convertedVapidKey,
+        });
+      }
+
+      await savePushSubscriptionAction(JSON.parse(JSON.stringify(sub)));
+    } catch {
+      // Fallo silencioso en fondo
+    }
+  };
+
+  const handleActivateClick = async () => {
+    if (typeof window === "undefined") return;
+
+    try {
+      setIsSubscribing(true);
+
+      // Verificación 1: Contexto seguro (HTTPS)
+      if (!window.isSecureContext) {
+        alert(
+          "⚠️ Conexión no segura (HTTP):\n\nLas notificaciones push solo funcionan a través de conexiones seguras (HTTPS). Si estás probando la app por IP local (http://...), el navegador móvil bloquea los permisos de notificación por seguridad."
+        );
+        return;
+      }
+
+      // Verificación 2: Soporte de Notification
+      if (!("Notification" in window)) {
+        if (isIOS && !isStandalone) {
+          alert(
+            "📱 En iPhone/iPad es necesario agregar la app a la Pantalla de Inicio:\n\n1. Toca el botón 'Compartir' (⎋) abajo en Safari.\n2. Elige 'Agregar a pantalla de inicio' (➕).\n3. Abre la app desde el nuevo icono para poder activar notificaciones."
+          );
+        } else {
+          alert("Este navegador no tiene soporte para la API de Notificaciones.");
+        }
+        return;
+      }
+
+      // Verificación 3: Permiso previamente bloqueado
+      if (Notification.permission === "denied") {
+        alert(
+          "⚠️ Permisos de notificación bloqueados:\n\nEn este dispositivo las notificaciones fueron desactivadas anteriormente.\n\nPara activarlas:\n• En iPhone: Ve a Ajustes > Notificaciones > OnlineDesk y actívalas.\n• En Android/PC: Toca el icono de candado al lado de la URL y permite las notificaciones."
+        );
+        return;
+      }
+
+      // ⚡ CRÍTICO PARA IOS/SAFARI: Solicitar permiso DIRECTAMENTE en el primer tick del clic
+      // (Cualquier 'await' previo rompe el token de gesto de usuario en WebKit)
+      let currentPerm = Notification.permission;
+      if (currentPerm !== "granted") {
+        try {
+          currentPerm = await Notification.requestPermission();
+        } catch {
+          // Fallback para navegadores antiguos con callback
+          currentPerm = await new Promise((resolve) => {
+            Notification.requestPermission((p) => resolve(p));
+          });
+        }
+        setPermission(currentPerm);
+      }
+
+      if (currentPerm !== "granted") {
+        toast({
+          title: "Permiso no concedido",
+          description: "No se activaron las notificaciones.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificación 4: Service Worker
+      if (!("serviceWorker" in navigator)) {
+        alert("El navegador no soporta Service Workers.");
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+
+      // Obtener clave pública VAPID
+      let key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || FALLBACK_VAPID_KEY;
+      if (!key) {
+        const resKey = await getVapidPublicKeyAction();
+        if (resKey.success && resKey.publicKey) {
+          key = resKey.publicKey;
+        }
+      }
+
+      const convertedVapidKey = urlBase64ToUint8Array(key);
+      let sub = await registration.pushManager.getSubscription();
+
+      if (!sub) {
+        sub = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedVapidKey,
         });
       }
 
       const res = await savePushSubscriptionAction(JSON.parse(JSON.stringify(sub)));
-      if (res.success && userGesture) {
+      if (res.success) {
+        setDismissed(true);
         toast({
           title: "¡Notificaciones activadas!",
-          description: "Recibirás alertas en este celular cuando haya novedades en tus tickets."
+          description: "Recibirás avisos en este celular cuando haya respuestas o cambios de estado.",
         });
+      } else {
+        alert("Error al vincular el dispositivo: " + (res.error || "Desconocido"));
       }
     } catch (err: any) {
-      console.error("Error al registrar notificaciones push:", err);
-      if (userGesture) {
-        toast({
-          title: "Error de activación",
-          description: err?.message || "No se pudo activar las notificaciones.",
-          variant: "destructive"
-        });
-      }
+      console.error("Error al suscribir notificaciones:", err);
+      alert("Error al suscribir notificaciones: " + (err?.message || JSON.stringify(err)));
     } finally {
-      if (userGesture) setIsSubscribing(false);
+      setIsSubscribing(false);
     }
   };
 
-  if (dismissed || permission === 'granted') {
+  if (!isMounted || dismissed || permission === "granted") {
     return null;
   }
 
-  // Caso 1: Usuario en iPhone pero aún en Safari pestaña normal (debe añadir a pantalla de inicio primero)
+  // Caso 1: iPhone/iPad abierto en Safari estándar (no standalone)
   if (isIOS && !isStandalone) {
     return (
-      <div className="flex-none mb-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/25 shadow-md">
+      <div className="flex-none mb-3 p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/25 shadow-md">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-2.5 min-w-0">
             <div className="h-8 w-8 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center shrink-0 mt-0.5">
@@ -131,27 +203,33 @@ export function PushManager() {
               <span className="font-bold text-white tracking-wide">
                 ¿Deseas notificaciones en tu iPhone?
               </span>
-              <span className="text-[11px] text-zinc-300 mt-0.5 leading-relaxed">
-                Toca el botón <strong className="text-blue-300">Compartir ⎋</strong> abajo en Safari y selecciona <strong className="text-white">"Agregar a pantalla de inicio" ➕</strong>. Ábrela desde allí para recibir alertas.
+              <span className="text-[11px] text-zinc-300 mt-1 leading-relaxed">
+                Apple exige que agregues la app a la pantalla de inicio:
+                <br />
+                1. Toca el botón <strong className="text-blue-300">Compartir ⎋</strong> abajo en Safari.
+                <br />
+                2. Selecciona <strong className="text-white">"Agregar a pantalla de inicio" ➕</strong>.
+                <br />
+                3. Abre la app desde ese nuevo icono para recibir avisos al instante.
               </span>
             </div>
           </div>
-          <button 
-            type="button" 
-            onClick={() => setDismissed(true)} 
+          <button
+            type="button"
+            onClick={() => setDismissed(true)}
             className="text-zinc-400 hover:text-white p-1"
             title="Cerrar"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       </div>
     );
   }
 
-  // Caso 2: Android, Desktop o iPhone PWA (permiso aún no concedido)
+  // Caso 2: PWA instalada en iPhone, o celular Android, o PC
   return (
-    <div className="flex-none mb-3 p-3 rounded-xl bg-gradient-to-r from-primary/15 via-blue-500/10 to-transparent border border-primary/30 shadow-lg">
+    <div className="flex-none mb-3 p-3.5 rounded-xl bg-gradient-to-r from-primary/15 via-blue-500/10 to-transparent border border-primary/30 shadow-lg">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="h-8 w-8 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center shrink-0">
@@ -170,14 +248,14 @@ export function PushManager() {
           <Button
             size="sm"
             disabled={isSubscribing}
-            onClick={() => registerAndSubscribe(true)}
-            className="min-h-[36px] px-3.5 text-xs font-bold bg-primary text-black hover:bg-primary/90 shadow-md cursor-pointer"
+            onClick={handleActivateClick}
+            className="min-h-[36px] px-4 text-xs font-bold bg-primary text-black hover:bg-primary/90 shadow-md cursor-pointer transition-all active:scale-95"
           >
             {isSubscribing ? "Activando..." : "Activar Notificaciones"}
           </Button>
-          <button 
-            type="button" 
-            onClick={() => setDismissed(true)} 
+          <button
+            type="button"
+            onClick={() => setDismissed(true)}
             className="text-zinc-500 hover:text-zinc-300 p-1.5"
             title="Ahora no"
           >
