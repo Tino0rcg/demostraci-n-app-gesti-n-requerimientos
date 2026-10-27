@@ -28,7 +28,8 @@ import {
     Info,
     History,
     Shield,
-    Timer
+    Timer,
+    Zap
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
