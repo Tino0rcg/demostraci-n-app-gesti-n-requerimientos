@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { login } from "./actions";
 import Image from "next/image";
-import { ShieldCheck, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Loader2, Eye, EyeOff, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
 
 function errorToSpanish(message: string): string {
     if (message.includes("Invalid login credentials")) {
@@ -29,6 +30,15 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("demo") === "true" || params.get("tour") === "true") {
+            setEmail("admin@vanguardia.cl");
+            setPassword("Vanguardia_2025!");
+        }
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -132,8 +142,8 @@ export default function LoginPage() {
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="pt-2 pb-8">
-                        <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-black font-black uppercase italic tracking-tighter shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 rounded-xl" type="submit" disabled={loading}>
+                    <CardFooter className="pt-2 pb-6 flex flex-col gap-4">
+                        <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-black font-black uppercase italic tracking-tighter shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 rounded-xl cursor-pointer" type="submit" disabled={loading}>
                             {loading ? (
                                 <div className="flex items-center gap-2">
                                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -141,6 +151,23 @@ export default function LoginPage() {
                                 </div>
                             ) : "Entrar al Sistema"}
                         </Button>
+
+                        <div className="w-full pt-3 border-t border-white/10 flex flex-col items-center gap-2">
+                            <span className="text-[11px] text-zinc-400 font-medium">
+                                ¿Vienes a revisar mi portafolio profesional?
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setEmail("admin@vanguardia.cl");
+                                    setPassword("Vanguardia_2025!");
+                                }}
+                                className="w-full py-2 px-3 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl transition-all flex items-center justify-center gap-2"
+                            >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                Cargar Credenciales de Demostración
+                            </button>
+                        </div>
                     </CardFooter>
                 </form>
             </Card>

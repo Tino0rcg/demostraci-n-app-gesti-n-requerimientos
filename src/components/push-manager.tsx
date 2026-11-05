@@ -229,7 +229,7 @@ export function PushManager() {
 
   // Caso 2: PWA instalada en iPhone, o celular Android, o PC
   return (
-    <div className="flex-none mb-3 p-3.5 rounded-xl bg-gradient-to-r from-primary/15 via-blue-500/10 to-transparent border border-primary/30 shadow-lg">
+    <div data-tour="push-manager" className="flex-none mb-3 p-3.5 rounded-xl bg-gradient-to-r from-primary/15 via-blue-500/10 to-transparent border border-primary/30 shadow-lg">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="h-8 w-8 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center shrink-0">

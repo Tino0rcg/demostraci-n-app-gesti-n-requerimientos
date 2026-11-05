@@ -42,6 +42,7 @@ import { NavLinks } from "@/components/dashboard/nav-links";
 import { BottomNav } from "@/components/dashboard/bottom-nav";
 import { PullToRefresh } from "@/components/ui/pull-to-refresh";
 import { PushManager } from "@/components/push-manager";
+import { TourGuide } from "@/components/dashboard/tour-guide";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 
 export default async function DashboardLayout({
@@ -133,6 +134,7 @@ export default async function DashboardLayout({
                         {children}
                     </PullToRefresh>
                 </main>
+                <TourGuide />
                 <BottomNav role={userData.role} />
             </div>
         </div>

@@ -29,6 +29,7 @@ function TicketCard({ ticket, submitter, onClick }: { ticket: Ticket, submitter?
     return (
         <Card 
             onClick={onClick}
+            data-tour="ticket-card"
             className="cursor-pointer glass-card border-none hover:-translate-y-1 transition-all shadow-md group"
         >
             <CardHeader className="p-4 pb-2 space-y-2">
@@ -36,7 +37,7 @@ function TicketCard({ ticket, submitter, onClick }: { ticket: Ticket, submitter?
                     <Badge variant="outline" className={priorityColorMap[ticket.priority as TicketPriority]}>
                         {ticket.priority}
                     </Badge>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5" data-tour="sla-indicator">
                         <div 
                             title={getSlaStatus(ticket).label} 
                             className={`h-2.5 w-2.5 rounded-full ${getSlaStatus(ticket).color} shadow-[0_0_8px_rgba(255,255,255,0.2)]`} 
@@ -134,7 +135,7 @@ export default function DashboardRootPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-black font-bold shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                    <Button asChild size="sm" data-tour="new-ticket-btn" className="bg-primary hover:bg-primary/90 text-black font-bold shadow-[0_0_20px_rgba(59,130,246,0.3)]">
                         <Link href="/dashboard/tickets/new" className="flex items-center gap-2">
                             <PlusCircle className="h-4 w-4" />
                             Nueva Solicitud (SLA)
@@ -144,7 +145,7 @@ export default function DashboardRootPage() {
             </div>
 
             {/* Desktop View: Grid Layout */}
-            <div className="hidden lg:grid grid-cols-4 gap-4 h-full">
+            <div data-tour="kanban-board" className="hidden lg:grid grid-cols-4 gap-4 h-full">
                 {COLUMNS.map((columnStatus) => (
                     <div key={columnStatus} className="flex flex-col bg-black/20 backdrop-blur-sm rounded-2xl p-4 gap-4 border border-white/5 ring-1 ring-white/5">
                         <div className="flex items-center justify-between px-1">

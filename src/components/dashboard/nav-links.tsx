@@ -80,6 +80,7 @@ export function NavLinks({ role, isMobile }: { role?: string, isMobile?: boolean
                     <Link
                         key={index}
                         href={item.href!}
+                        data-tour={item.href === "/dashboard/dashboards" ? "nav-dashboards" : undefined}
                         className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all font-medium ${
                             isActive 
                                 ? 'bg-primary/20 text-primary border-l-2 border-primary' 
