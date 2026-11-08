@@ -160,30 +160,68 @@ export default function LoginPage() {
                             ) : "Entrar al Sistema"}
                         </Button>
 
-                        <div className="w-full pt-3 border-t border-white/10 flex flex-col items-center gap-2">
-                            <span className="text-[11px] text-zinc-400 font-medium">
-                                ¿Vienes a revisar mi portafolio profesional?
-                            </span>
+                        <div className="w-full pt-3 border-t border-white/10 flex flex-col items-center gap-2.5">
+                            <div className="w-full p-3 rounded-xl bg-gradient-to-r from-primary/10 via-blue-500/10 to-primary/5 border border-primary/20 text-center space-y-1">
+                                <div className="flex items-center justify-center gap-1.5 text-[11px] font-black uppercase text-primary tracking-wide">
+                                    <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
+                                    <span>Modo Demostración Activo</span>
+                                </div>
+                                <p className="text-[10px] text-zinc-400">
+                                    Acceso directo sin claves para revisar el portafolio y el tour interactivo.
+                                </p>
+                            </div>
+
                             <button
                                 type="button"
                                 onClick={async () => {
                                     setLoading(true);
-                                    setEmail("admin@vanguardia.cl");
-                                    setPassword("Vanguardia_2025!");
-                                    try {
-                                        await directDemoLogin("admin");
-                                    } catch (err: any) {
-                                        if (err?.digest?.startsWith?.('NEXT_REDIRECT') || err?.message === 'NEXT_REDIRECT') return;
-                                        setLoading(false);
-                                    }
+                                    window.location.href = "/dashboard?tour=true&step=1";
                                 }}
-                                className="w-full py-2.5 px-3 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-sm"
+                                className="w-full py-2.5 px-3 text-xs font-black text-black bg-primary hover:bg-primary/90 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-md shadow-primary/25"
                             >
-                                <Sparkles className="w-3.5 h-3.5" />
-                                🚀 Acceso Directo de Demostración (1 Clic)
+                                <Sparkles className="w-3.5 h-3.5 text-black" />
+                                🚀 Saltar Login e Iniciar Tour Completo
                             </button>
-                            <div className="text-[10px] text-zinc-500 font-mono text-center pt-1">
-                                Usuario: <span className="text-zinc-300">admin@vanguardia.cl</span> | Clave: <span className="text-zinc-300">Vanguardia_2025!</span>
+
+                            <div className="w-full pt-1">
+                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block text-center mb-1.5">
+                                    O ingresa directamente con otro rol:
+                                </span>
+                                <div className="grid grid-cols-3 gap-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            setLoading(true);
+                                            try { await directDemoLogin("admin"); } catch { window.location.href = "/dashboard?tour=true&step=1"; }
+                                        }}
+                                        className="py-1.5 px-1 text-[10px] font-bold text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg truncate text-center cursor-pointer active:scale-95 transition-all"
+                                        title="Administrador Full TI"
+                                    >
+                                        👑 Admin
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            setLoading(true);
+                                            try { await directDemoLogin("tecnico"); } catch { window.location.href = "/dashboard?tour=true&step=1"; }
+                                        }}
+                                        className="py-1.5 px-1 text-[10px] font-bold text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg truncate text-center cursor-pointer active:scale-95 transition-all"
+                                        title="Técnico de Soporte"
+                                    >
+                                        🔧 Técnico
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            setLoading(true);
+                                            try { await directDemoLogin("cliente"); } catch { window.location.href = "/dashboard?tour=true&step=1"; }
+                                        }}
+                                        className="py-1.5 px-1 text-[10px] font-bold text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg truncate text-center cursor-pointer active:scale-95 transition-all"
+                                        title="Administrador de Empresa Cliente"
+                                    >
+                                        🏢 Cliente
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </CardFooter>

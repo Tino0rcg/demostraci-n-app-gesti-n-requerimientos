@@ -53,11 +53,51 @@ export const DEMO_USERS_MAP: Record<string, SessionUser> = {
     role: "Usuario",
     empresa: "TechNova Solutions",
     avatarUrl: "/avatars/5.png"
+  },
+  "admin": DEMO_ADMIN,
+  "tecnico": {
+    id: "22222222-2222-2222-2222-222222222222",
+    name: "Antonia Paz",
+    email: "apaz@vanguardia.cl",
+    role: "Técnico",
+    empresa: "Vanguardia SpA",
+    avatarUrl: "/avatars/2.png"
+  },
+  "cliente": {
+    id: "44444444-4444-4444-4444-444444444444",
+    name: "Carlos TechNova",
+    email: "carlos@technova.com",
+    role: "Administrador Cliente",
+    empresa: "TechNova Solutions",
+    avatarUrl: "/avatars/4.png"
   }
 };
 
 export async function getCurrentUserSession(): Promise<SessionUser> {
-  // 1. Verificar si hay sesión en Supabase Auth
+  // 1. Fast-path: Verificar si existe cookie de sesión de alta disponibilidad
+  try {
+    const cookieStore = await cookies();
+    const raw = cookieStore.get("onlinedesk_session")?.value;
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.email) {
+          return parsed;
+        }
+      } catch {}
+    }
+
+    // 2. Si no hay cookies de sesión ni tokens de Supabase, retornar DEMO_ADMIN de inmediato sin llamadas de red
+    const allCookies = cookieStore.getAll();
+    const hasAuthCookie = allCookies.some(c => c.name.startsWith("sb-") || c.name.includes("auth-token"));
+    if (!hasAuthCookie) {
+      return DEMO_ADMIN;
+    }
+  } catch {
+    return DEMO_ADMIN;
+  }
+
+  // 3. Solo si hay cookies de Supabase Auth, verificar con Supabase de forma protegida
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -89,18 +129,6 @@ export async function getCurrentUserSession(): Promise<SessionUser> {
     // Continuar a fallback de sesión
   }
 
-  // 2. Verificar si existe cookie de sesión de alta disponibilidad
-  try {
-    const cookieStore = await cookies();
-    const raw = cookieStore.get("onlinedesk_session")?.value;
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && parsed.email) {
-        return parsed;
-      }
-    }
-  } catch {}
-
-  // 3. Fallback de Portafolio / Demostración: Conceder perfil de Administrador Full para que nunca sea bloqueado
+  // 4. Fallback final garantizado de Portafolio
   return DEMO_ADMIN;
 }
