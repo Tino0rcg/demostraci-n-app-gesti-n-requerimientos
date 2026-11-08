@@ -4,10 +4,9 @@ import { ShieldCheck, BarChart3, TrendingUp } from "lucide-react";
 import { getTickets, getUsers, getServices } from "@/lib/data-server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
-
 import { getCurrentUserSession } from "@/lib/session";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardsPage() {
     const session = await getCurrentUserSession();

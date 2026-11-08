@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface SessionUser {
   id: string;
@@ -63,10 +63,7 @@ export async function getCurrentUserSession(): Promise<SessionUser> {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
-      const supabaseAdmin = createSupabaseAdmin(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+      const supabaseAdmin = createAdminClient();
 
       const { data: profile } = await supabaseAdmin
         .from('profiles')

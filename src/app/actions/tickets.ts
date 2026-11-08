@@ -1,15 +1,9 @@
 "use server";
 
-import { createClient as createSupabaseJS } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { sendTicketNotification } from './notifications'
 import { findBestTechnicianForTicket } from '@/lib/assignment-utils'
-
-function createAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!;
-  return createSupabaseJS(url, key);
-}
 
 export async function createTicketAction(data: {
     subject: string;

@@ -1,13 +1,7 @@
 "use server"
 
-import { createClient as createSupabaseJS } from '@supabase/supabase-js'
 import webpush from 'web-push'
-
-function getAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!;
-  return createSupabaseJS(url, key);
-}
+import { createAdminClient as getAdminClient } from '@/lib/supabase/admin'
 
 const vapidSubject = process.env.NEXT_PUBLIC_VAPID_SUBJECT || 'mailto:soporte@onlinedesk.com';
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';

@@ -1,22 +1,7 @@
 "use server";
 
-import { createClient as createSupabaseJS } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
-
-function createAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!;
-  return createSupabaseJS(
-    url,
-    key,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  )
-}
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function createProfileAction(data: {
   name: string;

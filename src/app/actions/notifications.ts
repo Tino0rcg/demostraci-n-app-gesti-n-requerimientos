@@ -3,14 +3,8 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import nodemailer from "nodemailer";
 import { TicketPDF } from "@/components/pdf/ticket-pdf";
-import { createClient as createSupabaseJS } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { Ticket, User, Note } from "@/lib/definitions";
-
-function createAdminClient() {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!;
-    return createSupabaseJS(url, key);
-}
 
 function getEmailTransporter() {
     const user = process.env.SMTP_USER || process.env.GMAIL_USER || process.env.BREVO_SMTP_LOGIN || 'requerimientosgestion@gmail.com';

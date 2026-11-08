@@ -45,6 +45,8 @@ import { PushManager } from "@/components/push-manager";
 import { TourGuide } from "@/components/dashboard/tour-guide";
 import { getCurrentUserSession } from "@/lib/session";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({
     children,
 }: {
