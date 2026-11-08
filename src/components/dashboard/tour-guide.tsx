@@ -26,12 +26,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter, usePathname } from "next/navigation";
 
 interface TourStep {
   id: string;
   badge: string;
   badgeColor: string;
   title: string;
+  route?: string;
   targetSelector?: string;
   indicatorText?: string;
   actionText: string;
@@ -48,6 +50,7 @@ const STEPS: TourStep[] = [
     badge: "Inicio • Rol Administrador Full",
     badgeColor: "bg-sky-500/10 text-sky-400 border-sky-500/30",
     title: "1. Panel de Bienvenida y Roles de Usuario",
+    route: "/dashboard",
     targetSelector: '[data-tour="tour-user-profile"]',
     indicatorText: "Tu Perfil Corporativo",
     actionText: "Observa tu perfil corporativo en la cabecera",
@@ -60,6 +63,7 @@ const STEPS: TourStep[] = [
     badge: "Supervisión en Tiempo Real",
     badgeColor: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
     title: "2. Tablero de Control Kanban (4 Estados)",
+    route: "/dashboard",
     targetSelector: '[data-tour="kanban-board"], [data-tour="kanban-board-mobile"]',
     indicatorText: "Tablero Kanban en Vivo",
     actionText: "Visualiza el flujo de trabajo de izquierda a derecha",
@@ -72,6 +76,7 @@ const STEPS: TourStep[] = [
     badge: "Motor de SLA Contractual",
     badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/30",
     title: "3. Semáforo y Tiempos de Compromiso (SLA)",
+    route: "/dashboard",
     targetSelector: '[data-tour="sla-indicator"], [data-tour="ticket-card"]',
     indicatorText: "Semáforo y Folio SLA",
     actionText: "Revisa el punto de color junto al folio # del requerimiento",
@@ -84,6 +89,7 @@ const STEPS: TourStep[] = [
     badge: "Ficha Técnica Interactiva",
     badgeColor: "bg-blue-500/10 text-blue-400 border-blue-500/30",
     title: "4. Detalle del Requerimiento en Panel Lateral",
+    route: "/dashboard",
     targetSelector: '[data-tour="ticket-sheet-content"], [data-tour="ticket-details-drawer"]',
     indicatorText: "Panel Lateral con Ficha Completa",
     actionText: "Ficha técnica completa desplegada en el panel lateral",
@@ -96,6 +102,7 @@ const STEPS: TourStep[] = [
     badge: "Función Estrella • SLA Inteligente",
     badgeColor: "bg-purple-500/10 text-purple-400 border-purple-500/30",
     title: "5. Cronómetro con Pausa Inteligente",
+    route: "/dashboard",
     targetSelector: '[data-tour="ticket-sla-timer"]',
     indicatorText: "Cronómetro Pausado de SLA",
     actionText: "Observa el reloj en la cabecera del requerimiento",
@@ -109,6 +116,7 @@ const STEPS: TourStep[] = [
     badge: "Comunicación Inmediata",
     badgeColor: "bg-cyan-500/10 text-cyan-400 border-cyan-500/30",
     title: "6. Chat en Vivo de Latencia Cero (0ms)",
+    route: "/dashboard",
     targetSelector: '[data-tour="ticket-chat-area"]',
     indicatorText: "Chat en Vivo de 0ms",
     actionText: "Escribe una respuesta o consulta en la bitácora",
@@ -122,6 +130,7 @@ const STEPS: TourStep[] = [
     badge: "Control de Calidad • Aprobación Dual",
     badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
     title: "7. Flujo de Aprobación Formal del Cliente",
+    route: "/dashboard",
     targetSelector: '[data-tour="ticket-approval-actions"], [data-tour="ticket-chat-area"]',
     indicatorText: "Aprobar o Rechazar Solución",
     actionText: "El cliente valida con 'Aprobar' o 'Rechazar'",
@@ -134,6 +143,7 @@ const STEPS: TourStep[] = [
     badge: "Inteligencia Operativa",
     badgeColor: "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30",
     title: "8. Botón '+ Nuevo Ticket' & Triaje con IA",
+    route: "/dashboard",
     targetSelector: '[data-tour="new-ticket-btn"], [data-tour="new-ticket-sidebar-btn"]',
     indicatorText: "Crear Nuevo Ticket",
     actionText: "Haz clic aquí para ingresar una solicitud bajo SLA",
@@ -141,75 +151,81 @@ const STEPS: TourStep[] = [
     autoCloseTicket: true,
     specialShowcase: "triage"
   },
-  // PASO 9: DIRECTORIO Y CAPACIDAD TÉCNICA
+  // PASO 9: DIRECTORIO Y CAPACIDAD TÉCNICA (VISTA EN VIVO)
   {
     id: "step-9",
     badge: "Supervisión de Cuadrilla",
     badgeColor: "bg-blue-500/10 text-blue-400 border-blue-500/30",
-    title: "9. Directorio y Capacidad Técnica",
-    targetSelector: '[data-tour="nav-tecnicos"], [data-tour="bottom-nav-secondary"], [data-tour="bottom-nav-menu"]',
-    indicatorText: "Técnicos de Soporte",
-    actionText: "Pulsa en 'Técnicos de Soporte' en el menú",
-    detail: "Supervisa la carga de trabajo activa de cada técnico, sus especialidades certificadas, su estado (Disponible, En Terreno, Fuera de turno) y su calificación de satisfacción CSAT (1.0 a 5.0 estrellas).",
+    title: "9. Vista en Vivo: Técnicos y Especialistas",
+    route: "/dashboard/tecnicos",
+    targetSelector: '[data-tour="tecnicos-view"], [data-tour="nav-tecnicos"]',
+    indicatorText: "Módulo de Técnicos de Soporte",
+    actionText: "Explora la cuadrilla técnica y su disponibilidad en tiempo real",
+    detail: "¡Ingresamos a la vista en vivo de Técnicos! Supervisa la carga de requerimientos asignados a cada especialista, sus competencias certificadas (Redes, Servidores, Software), su estado operativo y su calificación promedio CSAT basada en valoraciones de clientes.",
     autoCloseTicket: true
   },
-  // PASO 10: CLIENTES Y EMPRESAS MULTI-TENANT
+  // PASO 10: CLIENTES Y EMPRESAS MULTI-TENANT (VISTA EN VIVO)
   {
     id: "step-10",
     badge: "Multi-Empresa & B2B",
     badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-    title: "10. Clientes y Empresas Multi-Tenant",
-    targetSelector: '[data-tour="nav-clientes"], [data-tour="bottom-nav-menu"]',
-    indicatorText: "Clientes y Empresas",
-    actionText: "Explora el módulo de 'Clientes y Empresas'",
-    detail: "Permite gestionar múltiples empresas cliente de forma aislada y segura. Cada cliente solo visualiza los requerimientos y métricas de su propia organización con soporte para Administradores de Empresa.",
+    title: "10. Vista en Vivo: Clientes y Empresas Multi-Tenant",
+    route: "/dashboard/clientes",
+    targetSelector: '[data-tour="clientes-view"], [data-tour="nav-clientes"]',
+    indicatorText: "Módulo de Empresas Clientes",
+    actionText: "Revisa la gestión de contratos y aislamiento corporativo",
+    detail: "¡Ingresamos a la vista en vivo de Clientes! Plataforma multi-empresa donde cada organización cliente opera en un entorno seguro y aislado, visualizando únicamente sus propios requerimientos, SLA contratados y administradores autorizados.",
     autoCloseTicket: true
   },
-  // PASO 11: CATÁLOGO DE SERVICIOS
+  // PASO 11: CATÁLOGO DE SERVICIOS (VISTA EN VIVO)
   {
     id: "step-11",
     badge: "ANS & Catálogo TI",
     badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-    title: "11. Catálogo de Servicios Contractuales",
-    targetSelector: '[data-tour="nav-servicios"], [data-tour="bottom-nav-menu"]',
-    indicatorText: "Catálogo de Servicios",
-    actionText: "Revisa la lista de servicios y tiempos máximos",
-    detail: "Define los compromisos de atención por servicio: horas máximas de resolución y tiempos de primera respuesta (ej: 4h para fallas críticas de servidor vs 24h para configuraciones estándar).",
+    title: "11. Vista en Vivo: Catálogo de Servicios Contractuales",
+    route: "/dashboard/servicios",
+    targetSelector: '[data-tour="servicios-view"], [data-tour="nav-servicios"]',
+    indicatorText: "Catálogo Maestro de Servicios",
+    actionText: "Consulta los entregables contractuales y horas de SLA",
+    detail: "¡Ingresamos al Catálogo de Servicios! Define los compromisos formales por tipo de servicio: horas máximas de resolución y primera respuesta (ej: 4h para fallas críticas de infraestructura de red vs 24h para configuraciones estándar de puestos de trabajo).",
     autoCloseTicket: true
   },
-  // PASO 12: HISTORIAL CENTRALIZADO
+  // PASO 12: HISTORIAL CENTRALIZADO (VISTA EN VIVO)
   {
     id: "step-12",
     badge: "Trazabilidad y Auditoría",
     badgeColor: "bg-slate-500/10 text-slate-300 border-slate-500/30",
-    title: "12. Historial Centralizado y Búsqueda Predictiva",
-    targetSelector: '[data-tour="nav-historial"], [data-tour="bottom-nav-historial"], [data-tour="bottom-nav-menu"]',
+    title: "12. Vista en Vivo: Historial y Búsqueda Predictiva",
+    route: "/dashboard/tickets/historial",
+    targetSelector: '[data-tour="historial-view"], [data-tour="nav-historial"]',
     indicatorText: "Historial Centralizado",
-    actionText: "Consulta el archivo histórico de requerimientos",
-    detail: "Buscador predictivo por folio #, cliente o técnico. Permite auditar qué sucedió en cada caso, el tiempo exacto que tomó resolverlo y descargar el informe formal para cobros o auditorías.",
+    actionText: "Buscador predictivo y descarga de actas de servicio",
+    detail: "¡Ingresamos al Historial de Requerimientos! Archivo inmutable con buscador predictivo por folio #, empresa o técnico. Permite auditar qué sucedió en cada caso, el tiempo exacto que tomó resolverlo y descargar el informe formal de conformidad para auditorías.",
     autoCloseTicket: true
   },
-  // PASO 13: CUADRO DE MANDO EJECUTIVO (BI)
+  // PASO 13: CUADRO DE MANDO EJECUTIVO (VISTA EN VIVO)
   {
     id: "step-13",
     badge: "Business Intelligence",
     badgeColor: "bg-purple-500/10 text-purple-400 border-purple-500/30",
-    title: "13. Cuadro de Mando Ejecutivo & Analítica ANS",
-    targetSelector: '[data-tour="nav-dashboards"], [data-tour="bottom-nav-menu"]',
-    indicatorText: "Métricas y Análisis SLA",
-    actionText: "Haz clic en 'Métricas y Análisis' para ver gráficos",
-    detail: "Tablero analítico con gráficos interactivos que audita el porcentaje de cumplimiento de SLA (verde/rojo), distribución de demanda por empresa cliente, técnicos más productivos y proyección de eficiencia.",
+    title: "13. Vista en Vivo: Cuadro de Mando Ejecutivo & SLA",
+    route: "/dashboard/dashboards",
+    targetSelector: '[data-tour="dashboards-view"], [data-tour="nav-dashboards"]',
+    indicatorText: "Métricas y Analítica SLA",
+    actionText: "Tablero analítico con métricas de rendimiento en tiempo real",
+    detail: "¡Ingresamos al Tablero Analítico Ejecutivo! Gráficos interactivos que auditan el porcentaje de cumplimiento de SLA (verde/rojo), distribución de demanda por empresa cliente, técnicos más productivos y proyecciones de eficiencia para la toma de decisiones.",
     autoCloseTicket: true
   },
-  // PASO 14: PWA Y PUSH
+  // PASO 14: PWA Y PUSH (REGRESA A DASHBOARD)
   {
     id: "step-14",
     badge: "Movilidad Extrema",
     badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
     title: "14. Aplicación Web Progresiva (PWA) & Push",
+    route: "/dashboard",
     targetSelector: '[data-tour="push-manager"], [data-tour="tour-user-profile"]',
     indicatorText: "Notificaciones Web Push PWA",
-    actionText: "Activa las notificaciones en tu celular o PC",
+    actionText: "Regresamos al panel principal: activa alertas en tu celular",
     detail: "La plataforma funciona en celulares iPhone y Android como una aplicación instalable, enviando alertas sonoras y vibratorias en tiempo real vía Web Push VAPID sin intermediarios.",
     autoCloseTicket: true,
     specialShowcase: "pwa"
@@ -220,15 +236,18 @@ const STEPS: TourStep[] = [
     badge: "100% Operativo",
     badgeColor: "bg-sky-500/10 text-sky-400 border-sky-500/30",
     title: "15. ¡Recorrido Completo! Operación en Vivo Activada",
+    route: "/dashboard",
     targetSelector: '[data-tour="kanban-board"], [data-tour="kanban-board-mobile"]',
     indicatorText: "Plataforma 100% Operativa",
     actionText: "Ya puedes interactuar con libertad en la plataforma",
-    detail: "El recorrido guiado ha concluido con éxito. Puedes mover requerimientos, registrar nuevas solicitudes, interactuar en el chat en vivo o relanzar este tour en cualquier momento desde el botón flotante inferior.",
+    detail: "Has recorrido en vivo todas las vistas operativas de la plataforma. Puedes arrastrar requerimientos entre columnas, crear nuevas solicitudes, interactuar en el chat o relanzar este tour en cualquier momento desde el botón flotante inferior.",
     autoCloseTicket: true
   }
 ];
 
 export function TourGuide() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -279,6 +298,8 @@ export function TourGuide() {
     if (typeof window !== "undefined") {
       try {
         sessionStorage.setItem("onlinedesk_tour_seen", "true");
+        sessionStorage.removeItem("onlinedesk_tour_active");
+        sessionStorage.removeItem("onlinedesk_tour_step");
         const url = new URL(window.location.href);
         url.searchParams.delete("tour");
         url.searchParams.delete("step");
@@ -289,17 +310,35 @@ export function TourGuide() {
       }
     }
 
+    if (pathname !== "/dashboard") {
+      router.push("/dashboard");
+    }
+
     toast({
       title: "✨ Operación Normal Activada",
       description: "Tour finalizado. Ahora puedes explorar, gestionar requerimientos, chatear y operar con total libertad."
     });
-  }, [toast]);
+  }, [toast, pathname, router]);
 
   const handleStartTour = useCallback((startIndex = 0) => {
     const validIndex = Math.max(0, Math.min(startIndex, STEPS.length - 1));
     setCurrentStep(validIndex);
     setIsOpen(true);
-  }, []);
+
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("onlinedesk_tour_active", "true");
+        sessionStorage.setItem("onlinedesk_tour_step", String(validIndex));
+      } catch (e) {
+        // Safe against private browsing storage restrictions
+      }
+    }
+
+    const targetRoute = STEPS[validIndex]?.route;
+    if (targetRoute && pathname !== targetRoute) {
+      router.push(targetRoute);
+    }
+  }, [pathname, router]);
 
   const handleNext = useCallback(() => {
     if (currentStep < STEPS.length - 1) {
@@ -315,7 +354,27 @@ export function TourGuide() {
     }
   }, [currentStep]);
 
-  // Verificar URL al montar (?tour=true o ?demo=true o ?step=X)
+  // Persistir el paso actual en sessionStorage mientras el tour esté activo
+  useEffect(() => {
+    if (!isOpen || typeof window !== "undefined" && !sessionStorage) return;
+    try {
+      sessionStorage.setItem("onlinedesk_tour_active", "true");
+      sessionStorage.setItem("onlinedesk_tour_step", String(currentStep));
+    } catch (e) {
+      // Safe against private browsing storage restrictions
+    }
+  }, [isOpen, currentStep]);
+
+  // Auto-navegar a la vista correspondiente si el paso actual define una ruta distinta a la actual
+  useEffect(() => {
+    if (!isOpen) return;
+    const currentTourStep = STEPS[currentStep];
+    if (currentTourStep?.route && pathname !== currentTourStep.route) {
+      router.push(currentTourStep.route);
+    }
+  }, [isOpen, currentStep, pathname, router]);
+
+  // Verificar URL o sesión guardada al montar (?tour=true o ?demo=true o ?step=X o onlinedesk_tour_active)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -324,13 +383,24 @@ export function TourGuide() {
       const hasTourParam = params.get("tour") === "true" || params.get("demo") === "true";
       const stepParam = params.get("step");
       const parsedStep = stepParam ? parseInt(stepParam, 10) - 1 : 0;
-      const initialIndex = Math.max(0, Math.min(parsedStep, STEPS.length - 1));
 
       if (hasTourParam) {
+        const initialIndex = Math.max(0, Math.min(parsedStep, STEPS.length - 1));
         const timer = setTimeout(() => {
           handleStartTour(initialIndex);
         }, 300);
         return () => clearTimeout(timer);
+      }
+
+      // Si no hay parámetro de URL pero el tour estaba activo en la sesión previa (ej: recarga de página)
+      const isTourActiveInSession = sessionStorage.getItem("onlinedesk_tour_active") === "true";
+      const savedStepStr = sessionStorage.getItem("onlinedesk_tour_step");
+      if (isTourActiveInSession && savedStepStr !== null) {
+        const savedIndex = parseInt(savedStepStr, 10);
+        if (!isNaN(savedIndex) && savedIndex >= 0 && savedIndex < STEPS.length) {
+          setCurrentStep(savedIndex);
+          setIsOpen(true);
+        }
       }
     } catch (e) {
       console.warn("Tour URL check error:", e);
@@ -396,7 +466,7 @@ export function TourGuide() {
 
     const step = STEPS[currentStep];
     let attempts = 0;
-    const maxAttempts = 25; // 25 * 80ms = 2.0 segundos máximo de sondeo
+    const maxAttempts = 35; // 35 * 80ms = 2.8 segundos máximo de sondeo para transiciones de pantalla
     let pollInterval: any = null;
     let lastRect: { top: number; left: number; width: number; height: number } | null = null;
     let stableCount = 0;
@@ -539,7 +609,7 @@ export function TourGuide() {
       window.removeEventListener("scroll", onScrollOrResize);
       window.removeEventListener("resize", onScrollOrResize);
     };
-  }, [isOpen, currentStep]);
+  }, [isOpen, currentStep, pathname]);
 
   // Navegación por teclado
   useEffect(() => {
@@ -581,8 +651,9 @@ export function TourGuide() {
     }
 
     // CASO 1: Si estamos en pantalla de escritorio y el target está en el panel lateral (lado derecho)
-    // posicionamos la tarjeta a la izquierda del drawer para no tapar los datos ni el chat
-    if (!isMobile && targetRect.left > popoverWidth + 24) {
+    // Solo aplica a los pasos interactivos del cajón del ticket (pasos 4, 5, 6 y 7) para no tapar el contenido ni el chat
+    const isTicketDrawerStep = step?.id === "step-4" || step?.id === "step-5" || step?.id === "step-6" || step?.id === "step-7";
+    if (!isMobile && isTicketDrawerStep && targetRect.left > popoverWidth + 24) {
       const placement = "left" as const;
       const left = Math.max(16, targetRect.left - popoverWidth - 16);
       

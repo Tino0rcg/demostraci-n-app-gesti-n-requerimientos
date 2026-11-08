@@ -228,7 +228,7 @@ export default function ServiciosPage() {
                     </div>
                 </div>
             )}
-            <div className="flex items-center justify-between">
+            <div data-tour="servicios-view" className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-white uppercase italic">Catálogo de Servicios</h1>
                     <p className="text-muted-foreground mt-1 text-sm">

@@ -28,7 +28,7 @@ export default async function DashboardsPage() {
 
     return (
         <div className="flex flex-col gap-8">
-            <div className="flex flex-col gap-1">
+            <div data-tour="dashboards-view" className="flex flex-col gap-1">
                 <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest">
                     <ShieldCheck className="h-4 w-4" />
                     Módulo de Inteligencia Operativa
