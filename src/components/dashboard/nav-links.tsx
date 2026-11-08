@@ -76,11 +76,21 @@ export function NavLinks({ role, isMobile }: { role?: string, isMobile?: boolean
                     ? pathname === "/dashboard" 
                     : pathname?.startsWith(item.href!);
 
+                const tourMap: Record<string, string> = {
+                    "/dashboard": "nav-tablero",
+                    "/dashboard/tickets/historial": "nav-historial",
+                    "/dashboard/clientes": "nav-clientes",
+                    "/dashboard/usuarios": "nav-usuarios",
+                    "/dashboard/tecnicos": "nav-tecnicos",
+                    "/dashboard/servicios": "nav-servicios",
+                    "/dashboard/dashboards": "nav-dashboards",
+                };
+
                 const linkElement = (
                     <Link
                         key={index}
                         href={item.href!}
-                        data-tour={item.href === "/dashboard/dashboards" ? "nav-dashboards" : undefined}
+                        data-tour={tourMap[item.href!]}
                         className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all font-medium ${
                             isActive 
                                 ? 'bg-primary/20 text-primary border-l-2 border-primary' 

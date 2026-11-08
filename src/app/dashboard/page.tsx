@@ -175,7 +175,7 @@ export default function DashboardRootPage() {
             </div>
 
             {/* Mobile/Tablet View: Tabs Layout */}
-            <div className="lg:hidden flex flex-col h-full">
+            <div data-tour="kanban-board-mobile" className="lg:hidden flex flex-col h-full">
                 <Tabs defaultValue="Ingresado" className="w-full">
                     <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 bg-black/40 border border-white/10 p-1 mb-4 h-auto gap-1">
                         {COLUMNS.map(col => (

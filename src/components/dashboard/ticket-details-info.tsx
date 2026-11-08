@@ -524,7 +524,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             </Badge>
             
             {timeLeftStr && (
-                <div className="ml-auto flex items-center">
+                <div data-tour="ticket-sla-timer" className="ml-auto flex items-center">
                     <span className={`flex items-center text-[10px] font-mono font-bold tracking-wider px-2 py-0.5 rounded border border-white/5 bg-black/40 ${isOverdueSla ? 'text-red-400' : 'text-primary'}`}>
                         <Timer className={`w-3 h-3 mr-1 ${(ticket.status === 'Ingresado' || ticket.status === 'En proceso') ? 'animate-pulse' : ''}`} />
                         {timeLeftStr}
@@ -586,7 +586,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
 
       {/* Banner de Decisión de Solución: SOLO al usuario que ingresó el requerimiento */}
       {ticket.status === 'Espera de aprobación' && isSubmitter && (
-        <div className="flex-none mt-2.5 p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-emerald-500/10 to-transparent border border-amber-500/30 shadow-lg">
+        <div data-tour="ticket-approval-actions" className="flex-none mt-2.5 p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-emerald-500/10 to-transparent border border-amber-500/30 shadow-lg">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                     <div className="h-9 w-9 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
@@ -625,7 +625,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
 
       {/* Banner informativo para técnicos o admins cuando está en espera de aprobación (sin botones de aprobar/rechazar) */}
       {ticket.status === 'Espera de aprobación' && !isSubmitter && (
-        <div className="flex-none mt-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2.5">
+        <div data-tour="ticket-approval-actions" className="flex-none mt-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2.5">
             <div className="h-7 w-7 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0">
                 <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
             </div>
@@ -642,7 +642,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
 
       {/* Banner para el técnico a cargo cuando el ticket está en proceso */}
       {ticket.status === 'En proceso' && isTechnicianInCharge && (
-        <div className="flex-none mt-2.5 p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div data-tour="ticket-approval-actions" className="flex-none mt-2.5 p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div className="flex items-center gap-2.5 min-w-0">
                 <div className="h-7 w-7 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shrink-0">
                     <Play className="h-3.5 w-3.5 text-blue-400" />
@@ -669,7 +669,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
 
       {/* VISTA 1: CHAT Y BITÁCORA */}
       {activeTab === "chat" && (
-        <div data-chat-container="true" data-no-pull-to-refresh="true" className="flex flex-col flex-1 min-h-0 w-full mt-2">
+        <div data-chat-container="true" data-tour="ticket-chat-area" data-no-pull-to-refresh="true" className="flex flex-col flex-1 min-h-0 w-full mt-2">
             {/* Resumen colapsable de la descripción del problema */}
             <div className="p-2.5 bg-primary/5 border border-primary/20 rounded-xl text-xs flex-none mb-2">
                 <div className="flex items-center justify-between">
@@ -993,7 +993,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
 
             {/* Control de Asignación (Administrador Full) */}
             {currentUserProfile?.role === 'Administrador Full' && (
-                <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
+                <div data-tour="ticket-assignment-control" className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-3">
                         <h4 className="text-[11px] font-bold uppercase tracking-widest text-blue-400">Control de Asignación</h4>
                         <UserCheck className="w-3.5 h-3.5 text-blue-400" />

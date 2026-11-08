@@ -100,6 +100,7 @@ export default async function DashboardLayout({
                     {/* Botón para crear requerimiento */}
                     <Link
                         href="/dashboard/tickets/new"
+                        data-tour="new-ticket-sidebar-btn"
                         className="flex items-center justify-center gap-3 rounded-lg bg-primary text-primary-foreground px-3 py-2.5 transition-colors hover:bg-primary/90 font-bold mb-4 shadow-lg shadow-primary/20"
                     >
                         <PlusCircle className="h-5 w-5" />
@@ -124,7 +125,7 @@ export default async function DashboardLayout({
                     <div className="hidden sm:flex sm:flex-1"></div>
 
                     {/* Perfil de Usuario */}
-                    <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+                    <div data-tour="tour-user-profile" className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
                         <UserNav user={userData} />
                     </div>
                 </header>
