@@ -222,6 +222,19 @@ export function TourGuide() {
     setMounted(true);
   }, []);
 
+  // Marcar el body con data-tour-active para prevenir que componentes externos como Radix Sheet se cierren
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (isOpen) {
+      document.body.setAttribute("data-tour-active", "true");
+    } else {
+      document.body.removeAttribute("data-tour-active");
+    }
+    return () => {
+      document.body.removeAttribute("data-tour-active");
+    };
+  }, [isOpen]);
+
   const handleClose = useCallback(() => {
     setIsOpen(false);
     setTargetRect(null);
@@ -296,20 +309,40 @@ export function TourGuide() {
       if (!step) return;
 
       if (step.autoOpenTicket) {
-        const isSheetOpen = Boolean(document.querySelector('[role="dialog"]') || document.querySelector('[data-chat-container="true"]'));
-        if (!isSheetOpen) {
-          const firstCard = document.querySelector('[data-tour="ticket-card"]') as HTMLElement;
-          if (firstCard && typeof firstCard.click === "function") {
-            firstCard.click();
-          }
+        // En los pasos 5, 6 y 7 requerimos un ticket en 'Espera de aprobación' para mostrar la pausa de SLA y botones de aprobación
+        if (step.id === "step-5" || step.id === "step-6" || step.id === "step-7") {
+          window.dispatchEvent(new CustomEvent("tour:open-ticket", { detail: { status: "Espera de aprobación" } }));
+          setTimeout(() => {
+            const approvedCard = document.querySelector('[data-tour-status="Espera de aprobación"]') as HTMLElement;
+            if (approvedCard && typeof approvedCard.click === "function") {
+              approvedCard.click();
+            }
+          }, 80);
+        } else {
+          // Paso 4 o apertura general
+          window.dispatchEvent(new CustomEvent("tour:open-ticket", {}));
+          setTimeout(() => {
+            const firstCard = document.querySelector('[data-tour="ticket-card"]') as HTMLElement;
+            if (firstCard && typeof firstCard.click === "function") {
+              firstCard.click();
+            }
+          }, 80);
+        }
+
+        // Si es el paso 6 (Chat en Vivo), asegurar que la pestaña activa sea Chat
+        if (step.id === "step-6") {
+          setTimeout(() => {
+            const chatTab = document.querySelector('button[data-tab="chat"]') as HTMLElement;
+            if (chatTab && typeof chatTab.click === "function") {
+              chatTab.click();
+            }
+          }, 120);
         }
       } else if (step.autoCloseTicket) {
-        const isSheetOpen = Boolean(document.querySelector('[role="dialog"]') || document.querySelector('[data-chat-container="true"]'));
-        if (isSheetOpen) {
-          const closeBtn = document.querySelector('button[aria-label="Close"]') as HTMLElement;
-          if (closeBtn && typeof closeBtn.click === "function") {
-            closeBtn.click();
-          }
+        window.dispatchEvent(new CustomEvent("tour:close-ticket"));
+        const closeBtn = document.querySelector('button[aria-label="Close"]') as HTMLElement;
+        if (closeBtn && typeof closeBtn.click === "function") {
+          closeBtn.click();
         }
       }
     } catch (e) {
@@ -317,7 +350,7 @@ export function TourGuide() {
     }
   }, [isOpen, currentStep]);
 
-  // Medir y enfocar el elemento destacado
+  // Medir y enfocar el elemento destacado con sondeo periódico inteligente
   useEffect(() => {
     if (!isOpen) {
       setTargetRect(null);
@@ -325,33 +358,66 @@ export function TourGuide() {
     }
 
     const step = STEPS[currentStep];
+    let attempts = 0;
+    const maxAttempts = 25; // 25 * 80ms = 2.0 segundos máximo de sondeo
+    let pollInterval: any = null;
 
-    const updateRect = () => {
+    const findAndMeasure = () => {
+      attempts++;
       if (!step.targetSelector) {
         setTargetRect(null);
+        if (pollInterval) clearInterval(pollInterval);
         return;
       }
 
       // Buscar el selector en el documento (soporta selectores compuestos)
       const el = document.querySelector(step.targetSelector) as HTMLElement | null;
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
         const rect = el.getBoundingClientRect();
-        setTargetRect({
-          top: rect.top,
-          left: rect.left,
-          width: rect.width,
-          height: rect.height,
-          bottom: rect.bottom,
-          right: rect.right
-        });
-      } else {
-        setTargetRect(null);
+        if (rect.width > 0 && rect.height > 0) {
+          el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+          const updatedRect = el.getBoundingClientRect();
+          setTargetRect({
+            top: updatedRect.top,
+            left: updatedRect.left,
+            width: updatedRect.width,
+            height: updatedRect.height,
+            bottom: updatedRect.bottom,
+            right: updatedRect.right
+          });
+          if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+          }
+          return;
+        }
+      }
+
+      if (attempts >= maxAttempts) {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+        const fallbackEl = step.targetSelector ? (document.querySelector(step.targetSelector) as HTMLElement | null) : null;
+        if (fallbackEl) {
+          const rect = fallbackEl.getBoundingClientRect();
+          setTargetRect({
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            bottom: rect.bottom,
+            right: rect.right
+          });
+        } else {
+          setTargetRect(null);
+        }
       }
     };
 
-    // Tiempo prudente para dar margen a animaciones y renderizado del DOM
-    const timer = setTimeout(updateRect, 220);
+    // Medición inicial y sondeo periódico
+    findAndMeasure();
+    pollInterval = setInterval(findAndMeasure, 80);
 
     const onScrollOrResize = () => {
       if (!step.targetSelector) return;
@@ -373,7 +439,7 @@ export function TourGuide() {
     window.addEventListener("resize", onScrollOrResize);
 
     return () => {
-      clearTimeout(timer);
+      if (pollInterval) clearInterval(pollInterval);
       window.removeEventListener("scroll", onScrollOrResize);
       window.removeEventListener("resize", onScrollOrResize);
     };
@@ -399,7 +465,7 @@ export function TourGuide() {
   // Posicionamiento dinámico del popover anclado con flecha indicadora
   const popoverPosition = useMemo(() => {
     if (typeof window === "undefined") {
-      return { top: 100, left: 20, width: 380, placement: "bottom" as const, arrowLeft: 50 };
+      return { top: 100, left: 20, width: 380, placement: "bottom" as const, arrowLeft: 50, arrowTop: 50 };
     }
 
     const isMobile = window.innerWidth < 768;
@@ -413,7 +479,26 @@ export function TourGuide() {
         left: Math.max(12, (window.innerWidth - popoverWidth) / 2),
         width: popoverWidth,
         placement: "center" as const,
-        arrowLeft: popoverWidth / 2
+        arrowLeft: popoverWidth / 2,
+        arrowTop: 50
+      };
+    }
+
+    // Si estamos en pantalla de escritorio y el target está en el panel lateral (lado derecho)
+    // posicionamos la tarjeta a la izquierda del drawer para no tapar los datos ni el chat
+    if (!isMobile && targetRect.left > popoverWidth + 24) {
+      const placement = "left" as const;
+      const left = Math.max(16, targetRect.left - popoverWidth - 16);
+      const top = Math.max(20, Math.min(window.innerHeight - estimatedHeight - 20, targetRect.top));
+      const arrowTop = Math.max(24, Math.min(estimatedHeight - 24, targetRect.top + targetRect.height / 2 - top));
+
+      return {
+        top,
+        left,
+        width: popoverWidth,
+        placement,
+        arrowLeft: popoverWidth,
+        arrowTop
       };
     }
 
@@ -444,7 +529,8 @@ export function TourGuide() {
       left,
       width: popoverWidth,
       placement,
-      arrowLeft
+      arrowLeft,
+      arrowTop: 50
     };
   }, [targetRect, step?.specialShowcase]);
 
@@ -476,7 +562,7 @@ export function TourGuide() {
 
       {/* Capa de Tour Interactivo (Overlay) */}
       {isOpen && (
-        <div className="fixed inset-0 z-[10000] pointer-events-none">
+        <div data-tour-container="true" data-tour-active={isOpen ? "true" : "false"} className="fixed inset-0 z-[10000] pointer-events-none">
           {/* Fondo interactivo: clic en cualquier zona oscura para salir */}
           <div
             onClick={handleClose}
@@ -522,6 +608,7 @@ export function TourGuide() {
 
           {/* Tarjeta flotante anclada con flecha indicadora */}
           <div
+            id="tour-modal-card"
             style={{
               top: `${popoverPosition.top}px`,
               left: `${popoverPosition.left}px`,
@@ -540,6 +627,12 @@ export function TourGuide() {
               <div
                 style={{ left: `${popoverPosition.arrowLeft}px` }}
                 className="absolute -bottom-1.5 w-3 h-3 bg-[#0d121c] border-b border-r border-primary/40 rotate-45 transform -translate-x-1/2 z-20"
+              />
+            )}
+            {popoverPosition.placement === "left" && (
+              <div
+                style={{ top: `${popoverPosition.arrowTop || 40}px` }}
+                className="absolute -right-1.5 w-3 h-3 bg-[#0d121c] border-t border-r border-primary/40 rotate-45 transform -translate-y-1/2 z-20"
               />
             )}
 

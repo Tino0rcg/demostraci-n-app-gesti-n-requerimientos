@@ -49,6 +49,8 @@ function TicketCard({ ticket, submitter, onClick }: { ticket: Ticket, submitter?
         <Card 
             onClick={onClick}
             data-tour="ticket-card"
+            data-tour-status={ticket.status}
+            data-tour-ticket-id={ticket.id}
             className="cursor-pointer glass-card border-none hover:-translate-y-1 transition-all shadow-md group"
         >
             <CardHeader className="p-4 pb-2 space-y-2">
@@ -98,6 +100,35 @@ export default function DashboardRootPage() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshCount, setRefreshCount] = useState(0);
+
+    // Escuchar eventos de control del Tour para abrir tickets según estado de forma garantizada
+    useEffect(() => {
+        const handleTourOpenTicket = (e: any) => {
+            const ticketId = e.detail?.ticketId;
+            const status = e.detail?.status;
+            if (ticketId) {
+                setSelectedId(ticketId);
+            } else if (status) {
+                const targetTicket = tickets.find(t => t.status === status);
+                if (targetTicket) {
+                    setSelectedId(targetTicket.id);
+                }
+            } else if (tickets.length > 0) {
+                setSelectedId(tickets[0].id);
+            }
+        };
+
+        const handleTourCloseTicket = () => {
+            setSelectedId(null);
+        };
+
+        window.addEventListener('tour:open-ticket', handleTourOpenTicket as EventListener);
+        window.addEventListener('tour:close-ticket', handleTourCloseTicket);
+        return () => {
+            window.removeEventListener('tour:open-ticket', handleTourOpenTicket as EventListener);
+            window.removeEventListener('tour:close-ticket', handleTourCloseTicket);
+        };
+    }, [tickets]);
 
     const fetchData = React.useCallback(async (isInitial = false) => {
         try {
@@ -234,7 +265,29 @@ export default function DashboardRootPage() {
             </div>
 
             <Sheet open={!!selectedId} onOpenChange={(val) => !val && setSelectedId(null)}>
-                <SheetContent className="w-full max-w-none sm:max-w-md md:max-w-2xl glass-panel border-l-primary/20 p-0 overflow-hidden">
+                <SheetContent 
+                    onPointerDownOutside={(e) => {
+                        const target = e.target as HTMLElement | null;
+                        if (
+                            document.body.getAttribute('data-tour-active') === 'true' ||
+                            target?.closest('[data-tour-container="true"]') ||
+                            target?.closest('#tour-modal-card')
+                        ) {
+                            e.preventDefault();
+                        }
+                    }}
+                    onInteractOutside={(e) => {
+                        const target = e.target as HTMLElement | null;
+                        if (
+                            document.body.getAttribute('data-tour-active') === 'true' ||
+                            target?.closest('[data-tour-container="true"]') ||
+                            target?.closest('#tour-modal-card')
+                        ) {
+                            e.preventDefault();
+                        }
+                    }}
+                    className="w-full max-w-none sm:max-w-md md:max-w-2xl glass-panel border-l-primary/20 p-0 overflow-hidden"
+                >
                     <SheetTitle className="sr-only">Detalles del Requerimiento</SheetTitle>
                     {selectedId && (
                         <div className="h-full flex flex-col p-3 sm:p-6 pt-[max(1.25rem,env(safe-area-inset-top)+0.5rem)] sm:pt-6">

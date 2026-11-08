@@ -330,9 +330,11 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   const assignee = profiles.find((u) => u.id === ticket.assigneeId);
   const sla = getSlaStatus(ticket);
 
-  // El botón de aprobar/rechazar solo le debe salir al usuario que ingresó el requerimiento
+  // El botón de aprobar/rechazar le sale al solicitante original y a los administradores
   const isSubmitter = Boolean(
     ticket && (
+      currentUserProfile?.role === 'Administrador Full' ||
+      currentUserProfile?.role === 'Administrador Cliente' ||
       (currentUserId && ticket.submitterId === currentUserId) ||
       (currentUserProfile?.id && ticket.submitterId === currentUserProfile.id)
     )
@@ -508,7 +510,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
   };
 
   return (
-    <div data-no-pull-to-refresh="true" className="flex flex-col flex-1 min-h-0 w-full overflow-hidden">
+    <div data-no-pull-to-refresh="true" data-ticket-status={ticket.status} className="flex flex-col flex-1 min-h-0 w-full overflow-hidden">
       {/* Top Header Bar: Compact & Mobile-Safe */}
       <div className="flex-none pb-2 border-b border-white/10">
         <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 pr-12 flex-wrap">
@@ -540,6 +542,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
         <div className="flex items-center gap-1.5 p-1 bg-black/40 border border-white/10 rounded-xl mt-2.5">
             <button
                 type="button"
+                data-tab="chat"
                 onClick={() => setActiveTab("chat")}
                 className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all min-h-[38px] cursor-pointer ${
                     activeTab === "chat"
@@ -567,6 +570,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
             </button>
             <button
                 type="button"
+                data-tab="detalles"
                 onClick={() => setActiveTab("detalles")}
                 className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all min-h-[38px] cursor-pointer ${
                     activeTab === "detalles"
@@ -662,6 +666,33 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                 className="min-h-[34px] text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white border border-amber-500/50 cursor-pointer shrink-0"
             >
                 <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Terminado (Espera de aprobación)
+            </Button>
+        </div>
+      )}
+
+      {/* Banner para tickets nuevos en estado Ingresado */}
+      {ticket.status === 'Ingresado' && (
+        <div data-tour="ticket-approval-actions" className="flex-none mt-2.5 p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
+                <div className="h-7 w-7 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center shrink-0">
+                    <Clock className="h-3.5 w-3.5 text-cyan-400" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-semibold text-cyan-300">
+                        Requerimiento nuevo ingresado
+                    </span>
+                    <span className="text-[11px] text-zinc-400">
+                        Inicia la atención para registrar actividad y avanzar en el flujo:
+                    </span>
+                </div>
+            </div>
+            <Button 
+                size="sm"
+                disabled={isUpdating}
+                onClick={() => handleAction('En proceso', 'Atención técnica iniciada sobre el requerimiento.')}
+                className="min-h-[34px] text-xs font-bold bg-primary hover:bg-primary/90 text-black border border-primary/50 cursor-pointer shrink-0"
+            >
+                <Play className="w-3.5 h-3.5 mr-1.5" /> Iniciar Atención
             </Button>
         </div>
       )}
