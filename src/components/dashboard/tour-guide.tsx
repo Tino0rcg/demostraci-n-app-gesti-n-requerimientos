@@ -227,12 +227,16 @@ export function TourGuide() {
     setTargetRect(null);
 
     if (typeof window !== "undefined") {
-      sessionStorage.setItem("onlinedesk_tour_seen", "true");
-      const url = new URL(window.location.href);
-      url.searchParams.delete("tour");
-      url.searchParams.delete("step");
-      url.searchParams.delete("demo");
-      window.history.replaceState(null, "", url.toString());
+      try {
+        sessionStorage.setItem("onlinedesk_tour_seen", "true");
+        const url = new URL(window.location.href);
+        url.searchParams.delete("tour");
+        url.searchParams.delete("step");
+        url.searchParams.delete("demo");
+        window.history.replaceState(null, "", url.toString());
+      } catch (e) {
+        // Safe against private browsing storage restrictions
+      }
     }
 
     toast({
@@ -265,17 +269,21 @@ export function TourGuide() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const params = new URLSearchParams(window.location.search);
-    const hasTourParam = params.get("tour") === "true" || params.get("demo") === "true";
-    const stepParam = params.get("step");
-    const parsedStep = stepParam ? parseInt(stepParam, 10) - 1 : 0;
-    const initialIndex = Math.max(0, Math.min(parsedStep, STEPS.length - 1));
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const hasTourParam = params.get("tour") === "true" || params.get("demo") === "true";
+      const stepParam = params.get("step");
+      const parsedStep = stepParam ? parseInt(stepParam, 10) - 1 : 0;
+      const initialIndex = Math.max(0, Math.min(parsedStep, STEPS.length - 1));
 
-    if (hasTourParam) {
-      const timer = setTimeout(() => {
-        handleStartTour(initialIndex);
-      }, 500);
-      return () => clearTimeout(timer);
+      if (hasTourParam) {
+        const timer = setTimeout(() => {
+          handleStartTour(initialIndex);
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    } catch (e) {
+      console.warn("Tour URL check error:", e);
     }
   }, [handleStartTour]);
 
@@ -283,30 +291,29 @@ export function TourGuide() {
   useEffect(() => {
     if (!isOpen) return;
 
-    const step = STEPS[currentStep];
-    if (!step) return;
+    try {
+      const step = STEPS[currentStep];
+      if (!step) return;
 
-    if (step.autoOpenTicket) {
-      // Si el ticket aún no está abierto, hacer clic en el primer ticket del tablero
-      const isSheetOpen = Boolean(document.querySelector('[role="dialog"]') || document.querySelector('[data-chat-container="true"]'));
-      if (!isSheetOpen) {
-        const firstCard = document.querySelector('[data-tour="ticket-card"]') as HTMLElement;
-        if (firstCard) {
-          firstCard.click();
+      if (step.autoOpenTicket) {
+        const isSheetOpen = Boolean(document.querySelector('[role="dialog"]') || document.querySelector('[data-chat-container="true"]'));
+        if (!isSheetOpen) {
+          const firstCard = document.querySelector('[data-tour="ticket-card"]') as HTMLElement;
+          if (firstCard && typeof firstCard.click === "function") {
+            firstCard.click();
+          }
+        }
+      } else if (step.autoCloseTicket) {
+        const isSheetOpen = Boolean(document.querySelector('[role="dialog"]') || document.querySelector('[data-chat-container="true"]'));
+        if (isSheetOpen) {
+          const closeBtn = document.querySelector('button[aria-label="Close"]') as HTMLElement;
+          if (closeBtn && typeof closeBtn.click === "function") {
+            closeBtn.click();
+          }
         }
       }
-    } else if (step.autoCloseTicket) {
-      // Si el cajón de ticket está abierto, cerrarlo para ver el fondo general
-      const isSheetOpen = Boolean(document.querySelector('[role="dialog"]') || document.querySelector('[data-chat-container="true"]'));
-      if (isSheetOpen) {
-        // Simular clic en el botón de cerrar del sheet o presionar Escape
-        const closeBtn = document.querySelector('button[aria-label="Close"]') as HTMLElement;
-        if (closeBtn) {
-          closeBtn.click();
-        } else {
-          window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-        }
-      }
+    } catch (e) {
+      console.warn("Tour sheet toggle error:", e);
     }
   }, [isOpen, currentStep]);
 

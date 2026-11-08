@@ -32,30 +32,34 @@ export function PushManager() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    try {
+      if (typeof window === "undefined") return;
 
-    setIsMounted(true);
-    setIsSecure(window.isSecureContext);
+      setIsMounted(true);
+      setIsSecure(window.isSecureContext ?? true);
 
-    // Detección robusta de iOS (incluye iPads con iPadOS moderno que reportan MacIntel)
-    const ios =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      const ios =
+        /iPad|iPhone|iPod/.test(navigator.userAgent || "") ||
+        ((navigator as any).platform === "MacIntel" && ((navigator as any).maxTouchPoints || 0) > 1);
 
-    // Detección de si la app corre como PWA instalada en la pantalla de inicio
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true;
+      const standalone =
+        (typeof window.matchMedia === "function" && window.matchMedia("(display-mode: standalone)").matches) ||
+        (window.navigator as any)?.standalone === true;
 
-    setIsIOS(ios);
-    setIsStandalone(Boolean(standalone));
+      setIsIOS(Boolean(ios));
+      setIsStandalone(Boolean(standalone));
 
-    if ("Notification" in window) {
-      setPermission(Notification.permission);
-      if (Notification.permission === "granted") {
-        // Suscribir silenciosamente si ya estaba autorizado
-        silentSubscribe();
+      if ("Notification" in window && typeof Notification !== "undefined") {
+        try {
+          const perm = Notification.permission;
+          setPermission(perm);
+          if (perm === "granted") {
+            silentSubscribe();
+          }
+        } catch {}
       }
+    } catch (e) {
+      console.warn("PushManager init warning:", e);
     }
   }, []);
 

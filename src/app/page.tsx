@@ -37,10 +37,10 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
-            <Link href="/login">
+            <Link href="/dashboard?tour=true&step=1">
               <Button className="rounded-full bg-white text-black hover:bg-blue-50 hover:text-blue-600 hover:scale-105 font-bold px-4 md:px-7 text-xs md:text-sm h-8 md:h-10 shadow-[0_0_20px_rgba(255,255,255,0.15)] transition-all duration-300 group">
-                <span className="hidden sm:inline">Ingresar al Portal</span>
-                <span className="sm:hidden">Ingresar</span>
+                <span className="hidden sm:inline">🚀 Iniciar Tour</span>
+                <span className="sm:hidden">Tour</span>
                 <ArrowRight className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
@@ -69,9 +69,24 @@ export default function Home() {
         </h1>
 
         {/* Subtitle */}
-        <p className="max-w-3xl mb-12 text-lg md:text-xl text-zinc-400 font-medium leading-relaxed">
+        <p className="max-w-3xl mb-8 text-lg md:text-xl text-zinc-400 font-medium leading-relaxed">
           Optimiza la resolución de incidentes, controla tus SLAs en tiempo real y centraliza las operaciones de tu equipo técnico con OnlineDesk, la herramienta corporativa definitiva.
         </p>
+
+        {/* CTAs con acceso directo sin login al igual que ICSA */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+          <Link href="/dashboard?tour=true&step=1">
+            <Button className="rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 hover:opacity-95 text-white font-black px-8 h-14 text-base shadow-[0_0_35px_rgba(59,130,246,0.4)] transition-all hover:scale-105 gap-2 cursor-pointer">
+              🚀 Iniciar Tour Guiado (Demo en Vivo)
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          </Link>
+          <Link href="/dashboard?tour=true&step=1">
+            <Button variant="outline" className="rounded-full border-white/20 hover:bg-white/10 text-white font-bold px-6 h-14 text-base cursor-pointer">
+              Entrar al Tablero
+            </Button>
+          </Link>
+        </div>
 
       </section>
 

@@ -33,11 +33,11 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (typeof window === "undefined") return;
-        const params = new URLSearchParams(window.location.search);
-        if (params.get("demo") === "true" || params.get("tour") === "true") {
-            setEmail("admin@vanguardia.cl");
-            setPassword("Vanguardia_2025!");
-        }
+        // Salto automático de login: exactamente igual que en la app de ICSA
+        const timer = setTimeout(() => {
+            window.location.href = "/dashboard?tour=true&step=1";
+        }, 120);
+        return () => clearTimeout(timer);
     }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
