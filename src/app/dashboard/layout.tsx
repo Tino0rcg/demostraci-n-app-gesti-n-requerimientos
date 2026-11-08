@@ -43,44 +43,14 @@ import { BottomNav } from "@/components/dashboard/bottom-nav";
 import { PullToRefresh } from "@/components/ui/pull-to-refresh";
 import { PushManager } from "@/components/push-manager";
 import { TourGuide } from "@/components/dashboard/tour-guide";
-import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import { getCurrentUserSession } from "@/lib/session";
 
 export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    let userProfile = null;
-    let companyName = "Desconocida";
-    
-    if (user) {
-        const supabaseAdmin = createSupabaseAdmin(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
-
-        const { data: profile } = await supabaseAdmin
-            .from('profiles')
-            .select(`*, companies(name)`)
-            .eq('id', user.id)
-            .single();
-            
-        userProfile = profile;
-        if (profile?.companies && profile?.role?.trim() !== 'Administrador Full') {
-            companyName = Array.isArray(profile.companies) ? profile.companies[0]?.name : profile.companies.name;
-        }
-    }
-
-    const userData = {
-        name: userProfile?.name || 'Usuario',
-        email: userProfile?.email || user?.email || '',
-        role: userProfile?.role || 'Usuario',
-        empresa: companyName || 'Desconocida',
-        avatarUrl: userProfile?.avatar_url || ''
-    };
+    const userData = await getCurrentUserSession();
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-muted/40">

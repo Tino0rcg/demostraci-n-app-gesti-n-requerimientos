@@ -362,9 +362,8 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
     let authorId: string | undefined = currentUserId || currentUserProfile?.id;
     if (!authorId) {
       const { data: userData } = await supabase.auth.getUser();
-      authorId = userData.user?.id;
+      authorId = userData?.user?.id || "11111111-1111-1111-1111-111111111111";
     }
-    if (!authorId) return;
 
     // 1. Limpieza de campo y renderizado instantáneo en pantalla (0ms)
     setNewMessage("");

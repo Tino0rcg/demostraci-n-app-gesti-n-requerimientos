@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { login } from "./actions";
+import { login, directDemoLogin } from "./actions";
 import Image from "next/image";
 import { ShieldCheck, ArrowLeft, Loader2, Eye, EyeOff, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -45,17 +45,25 @@ export default function LoginPage() {
         setLoading(true);
         setErrorMsg("");
 
-        const formData = new FormData();
-        formData.append("email", email);
-        formData.append("password", password);
+        try {
+            const formData = new FormData();
+            formData.append("email", email);
+            formData.append("password", password);
 
-        const result = await login(formData);
-        
-        if (result?.error) {
-            setErrorMsg(errorToSpanish(result.error));
+            const result = await login(formData);
+            
+            if (result?.error) {
+                setErrorMsg(errorToSpanish(result.error));
+                setLoading(false);
+            }
+        } catch (err: any) {
+            // Next.js redirect lanza una excepción interna esperada
+            if (err?.digest?.startsWith?.('NEXT_REDIRECT') || err?.message === 'NEXT_REDIRECT') {
+                return;
+            }
+            console.error("Login catch:", err);
             setLoading(false);
         }
-        // Si hay éxito, el servidor hará redirect a /dashboard
     };
 
     return (
@@ -158,14 +166,21 @@ export default function LoginPage() {
                             </span>
                             <button
                                 type="button"
-                                onClick={() => {
+                                onClick={async () => {
+                                    setLoading(true);
                                     setEmail("admin@vanguardia.cl");
                                     setPassword("Vanguardia_2025!");
+                                    try {
+                                        await directDemoLogin("admin");
+                                    } catch (err: any) {
+                                        if (err?.digest?.startsWith?.('NEXT_REDIRECT') || err?.message === 'NEXT_REDIRECT') return;
+                                        setLoading(false);
+                                    }
                                 }}
-                                className="w-full py-2 px-3 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl transition-all flex items-center justify-center gap-2"
+                                className="w-full py-2.5 px-3 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-sm"
                             >
                                 <Sparkles className="w-3.5 h-3.5" />
-                                Cargar Credenciales de Demostración
+                                🚀 Acceso Directo de Demostración (1 Clic)
                             </button>
                         </div>
                     </CardFooter>

@@ -7,26 +7,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 
+import { getCurrentUserSession } from "@/lib/session";
+
 export default async function DashboardsPage() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect("/login");
-    }
-
-    const supabaseAdmin = createSupabaseAdmin(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    const { data: profile } = await supabaseAdmin
-        .from('profiles')
-        .select('role, company_id')
-        .eq('id', user.id)
-        .single();
-
-    const userRole = profile?.role?.trim();
+    const session = await getCurrentUserSession();
+    const userRole = session.role?.trim();
 
     // Solo administradores (Full o de Cliente) y técnicos autorizados
     if (userRole !== 'Administrador Full' && userRole !== 'Administrador Cliente') {
@@ -38,8 +23,8 @@ export default async function DashboardsPage() {
     const allServices = await getServices();
 
     // Si es Administrador Cliente, filtrar solo los requerimientos de su empresa
-    const visibleTickets = (userRole === 'Administrador Cliente' && profile?.company_id)
-        ? allTickets.filter((t: any) => t.company_id === profile.company_id)
+    const visibleTickets = (userRole === 'Administrador Cliente' && (session as any).company_id)
+        ? allTickets.filter((t: any) => t.company_id === (session as any).company_id)
         : allTickets;
 
     return (

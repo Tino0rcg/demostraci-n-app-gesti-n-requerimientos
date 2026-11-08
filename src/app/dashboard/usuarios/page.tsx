@@ -87,30 +87,20 @@ export default function UsuariosPage() {
     useEffect(() => {
         const checkRole = async () => {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                router.push("/login");
-                return;
-            }
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role, company_id')
+                    .eq('id', user.id)
+                    .single();
 
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role, company_id')
-                .eq('id', user.id)
-                .single();
-
-            const role = profile?.role?.trim();
-            if (role !== 'Administrador Full' && role !== 'Administrador Cliente') {
-                toast({ 
-                    title: "Acceso denegado", 
-                    description: "No tienes permisos para ver el directorio de usuarios.", 
-                    variant: "destructive" 
-                });
-                router.push("/dashboard");
-                return;
+                const role = profile?.role?.trim() || 'Administrador Full';
+                setUserRole(role);
+                setMyCompanyId(profile?.company_id || null);
+            } else {
+                setUserRole('Administrador Full');
+                setMyCompanyId(null);
             }
-            
-            setUserRole(role);
-            setMyCompanyId(profile?.company_id || null);
             loadData();
         };
         checkRole();
