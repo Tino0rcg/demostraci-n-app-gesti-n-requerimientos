@@ -211,11 +211,16 @@ const STEPS: TourStep[] = [
 ];
 
 export function TourGuide() {
+  const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<{ top: number; left: number; width: number; height: number; bottom: number; right: number } | null>(null);
   const [pillVisible, setPillVisible] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
@@ -435,6 +440,8 @@ export function TourGuide() {
       arrowLeft
     };
   }, [targetRect, step?.specialShowcase]);
+
+  if (!mounted) return null;
 
   return (
     <>

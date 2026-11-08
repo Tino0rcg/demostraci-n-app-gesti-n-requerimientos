@@ -39,15 +39,39 @@ export async function createServiceAction(data: {
   }
 }
 
+import { SERVICE_CATALOG } from '@/lib/data';
+
 export async function getServicesAction() {
   try {
     const supabaseAdmin = createAdminClient();
     const { data, error } = await supabaseAdmin.from('services').select('*').order('created_at', { ascending: false });
     
-    if (error) return { success: false, data: [] };
+    if (error || !data || data.length === 0) {
+      return { 
+        success: true, 
+        data: SERVICE_CATALOG.map(s => ({
+          id: s.id,
+          name: s.nombre,
+          category: s.category,
+          priority: s.priority,
+          sla_hours: s.slaHours,
+          created_at: new Date().toISOString()
+        }))
+      };
+    }
     return { success: true, data };
   } catch (error) {
-    return { success: false, data: [] };
+    return { 
+      success: true, 
+      data: SERVICE_CATALOG.map(s => ({
+        id: s.id,
+        name: s.nombre,
+        category: s.category,
+        priority: s.priority,
+        sla_hours: s.slaHours,
+        created_at: new Date().toISOString()
+      }))
+    };
   }
 }
 

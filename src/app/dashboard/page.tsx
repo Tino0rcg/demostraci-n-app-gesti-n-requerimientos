@@ -27,7 +27,24 @@ const priorityColorMap: { [key in TicketPriority]: string } = {
     Crítica: "bg-red-500/20 text-red-400 border border-red-500/30",
 };
 
+function safeDate(val: any, fallback = new Date()): Date {
+    if (!val) return fallback;
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? fallback : d;
+}
+
 function TicketCard({ ticket, submitter, onClick }: { ticket: Ticket, submitter?: User, onClick: () => void }) {
+    const priorityClass = priorityColorMap[ticket.priority as TicketPriority] || "bg-blue-500/20 text-blue-400 border border-blue-500/30";
+    const ticketCode = ticket.codigo || (ticket.id ? String(ticket.id).split('-')[0].toUpperCase() : 'REQ');
+    
+    let formattedDate = "Reciente";
+    try {
+        const d = safeDate(ticket.updatedAt);
+        formattedDate = format(d, "MMM dd");
+    } catch {
+        formattedDate = "Reciente";
+    }
+
     return (
         <Card 
             onClick={onClick}
@@ -36,19 +53,19 @@ function TicketCard({ ticket, submitter, onClick }: { ticket: Ticket, submitter?
         >
             <CardHeader className="p-4 pb-2 space-y-2">
                 <div className="flex justify-between items-start gap-2">
-                    <Badge variant="outline" className={priorityColorMap[ticket.priority as TicketPriority]}>
-                        {ticket.priority}
+                    <Badge variant="outline" className={priorityClass}>
+                        {ticket.priority || 'Normal'}
                     </Badge>
                     <div className="flex items-center gap-1.5" data-tour="sla-indicator">
                         <div 
                             title={getSlaStatus(ticket).label} 
                             className={`h-2.5 w-2.5 rounded-full ${getSlaStatus(ticket).color} shadow-[0_0_8px_rgba(255,255,255,0.2)]`} 
                         />
-                        <span className="text-xs text-muted-foreground font-mono font-bold text-primary">#{ticket.codigo || ticket.id.split('-')[0].toUpperCase()}</span>
+                        <span className="text-xs text-muted-foreground font-mono font-bold text-primary">#{ticketCode}</span>
                     </div>
                 </div>
                 <CardTitle className="text-sm font-bold leading-tight group-hover:text-primary transition-colors">
-                    {ticket.subject}
+                    {ticket.subject || 'Sin asunto'}
                 </CardTitle>
                 <div className="flex flex-col pt-1">
                     <span className="text-[11px] text-white/90 font-medium">{submitter?.name || 'Desconocido'}</span>
@@ -57,16 +74,16 @@ function TicketCard({ ticket, submitter, onClick }: { ticket: Ticket, submitter?
             </CardHeader>
             <CardContent className="p-4 pt-0">
                 <p className="text-xs text-zinc-400 line-clamp-2 mt-1 mb-3 leading-relaxed">
-                    {ticket.description}
+                    {ticket.description || 'Sin descripción'}
                 </p>
                 <div className="flex items-center justify-between text-[10px] text-zinc-500 font-medium font-mono uppercase tracking-tighter">
                     <div className="flex items-center gap-1.5">
                         <AlertCircle className="h-3 w-3 text-zinc-600" />
-                        <span>{ticket.category}</span>
+                        <span>{ticket.category || 'General'}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <Clock className="h-3 w-3 text-zinc-600" />
-                        <span>{format(ticket.updatedAt, "MMM dd")}</span>
+                        <span>{formattedDate}</span>
                     </div>
                 </div>
             </CardContent>
@@ -88,13 +105,23 @@ export default function DashboardRootPage() {
             const resultTickets = await getTicketsAction();
             if (resultTickets.success && resultTickets.data) {
                 const now = new Date();
-                const processedTickets = (resultTickets.data as Ticket[])
+                const processedTickets = (resultTickets.data as any[])
+                    .map(t => ({
+                        ...t,
+                        codigo: t.codigo || (t.id ? String(t.id).split('-')[0].toUpperCase() : 'REQ'),
+                        priority: t.priority || 'Media',
+                        category: t.category || 'General',
+                        createdAt: safeDate(t.createdAt || t.created_at),
+                        updatedAt: safeDate(t.updatedAt || t.updated_at),
+                        dueAt: safeDate(t.dueAt || t.due_at, new Date(Date.now() + 24 * 3600 * 1000)),
+                        resolvedAt: (t.resolvedAt || t.resolved_at) ? safeDate(t.resolvedAt || t.resolved_at) : null,
+                    }))
                     .filter(t => {
-                        // Si está terminado, solo mostrar si fue resuelto hace menos de 24 horas
+                        // Si está terminado, solo mostrar si fue resuelto hace menos de 48 horas
                         if (t.status === 'Terminado' && t.resolvedAt) {
-                            const diffInMs = now.getTime() - t.resolvedAt.getTime();
+                            const diffInMs = now.getTime() - new Date(t.resolvedAt).getTime();
                             const diffInHours = diffInMs / (1000 * 60 * 60);
-                            return diffInHours <= 24;
+                            return diffInHours <= 48;
                         }
                         return true;
                     });

@@ -114,17 +114,17 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
     if (!ticket) return;
 
     const calculate = () => {
-        let referenceTime: Date;
+        let referenceTime: any;
         if (ticket.status === 'Terminado') {
-            referenceTime = ticket.resolvedAt || ticket.updatedAt;
+            referenceTime = ticket.resolvedAt || ticket.updatedAt || new Date();
         } else if (ticket.status === 'Espera de aprobación') {
-            referenceTime = ticket.updatedAt;
+            referenceTime = ticket.updatedAt || new Date();
         } else {
             referenceTime = new Date();
         }
 
-        const dueTime = ticket.dueAt.getTime();
-        const refTime = referenceTime.getTime();
+        const dueTime = new Date(ticket.dueAt || Date.now()).getTime();
+        const refTime = new Date(referenceTime || Date.now()).getTime();
         const diff = dueTime - refTime;
         
         setIsOverdueSla(diff < 0);
@@ -212,7 +212,7 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
                 // Preservar notas temporales que aún no se reflejan en la base de datos
                 const pendingTemps = prevNotes.filter(n => 
                     n.id.startsWith('temp-') && 
-                    !mapped.some(m => m.content === n.content && m.authorId === n.authorId && Math.abs(m.createdAt.getTime() - n.createdAt.getTime()) < 15000)
+                    !mapped.some(m => m.content === n.content && m.authorId === n.authorId && Math.abs(new Date(m.createdAt).getTime() - new Date(n.createdAt).getTime()) < 15000)
                 );
                 return [...mapped, ...pendingTemps];
             });
