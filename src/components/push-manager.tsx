@@ -29,6 +29,7 @@ export function PushManager() {
   const [permission, setPermission] = useState<NotificationPermission | "unknown">("unknown");
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [isTourActive, setIsTourActive] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -37,6 +38,17 @@ export function PushManager() {
 
       setIsMounted(true);
       setIsSecure(window.isSecureContext ?? true);
+
+      const checkTour = () => {
+        const active = typeof document !== "undefined" && document.body.getAttribute("data-tour-active") === "true";
+        setIsTourActive(active);
+      };
+      checkTour();
+      let observer: MutationObserver | null = null;
+      if (typeof document !== "undefined" && document.body) {
+        observer = new MutationObserver(checkTour);
+        observer.observe(document.body, { attributes: true, attributeFilter: ["data-tour-active"] });
+      }
 
       const ios =
         /iPad|iPhone|iPod/.test(navigator.userAgent || "") ||
@@ -58,6 +70,10 @@ export function PushManager() {
           }
         } catch {}
       }
+
+      return () => {
+        if (observer) observer.disconnect();
+      };
     } catch (e) {
       console.warn("PushManager init warning:", e);
     }
@@ -190,14 +206,45 @@ export function PushManager() {
     }
   };
 
-  if (!isMounted || dismissed || permission === "granted") {
+  if (!isMounted) {
     return null;
+  }
+
+  // Si el tour NO está activo y el usuario ya cerró o ya otorgó permisos, no mostramos nada
+  if (!isTourActive && (dismissed || permission === "granted")) {
+    return null;
+  }
+
+  // Si el tour está activo y las notificaciones ya fueron concedidas, mostramos banner de estado activo para el tour
+  if (isTourActive && permission === "granted") {
+    return (
+      <div data-tour="push-manager" className="flex-none mb-3 p-3.5 rounded-xl bg-gradient-to-r from-emerald-500/15 via-blue-500/10 to-transparent border border-emerald-500/30 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-8 w-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0">
+              <BellRing className="h-4 w-4 text-emerald-400" />
+            </div>
+            <div className="flex flex-col min-w-0 text-xs">
+              <span className="font-bold text-white tracking-wide">
+                Notificaciones Web Push Activas (PWA)
+              </span>
+              <span className="text-[11px] text-zinc-300">
+                Suscripción VAPID y Service Worker enlazados correctamente. Alertas en tiempo real operativas.
+              </span>
+            </div>
+          </div>
+          <span className="text-[11px] font-bold text-emerald-400 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 whitespace-nowrap self-start sm:self-center">
+            ✅ Enlace Cifrado Activo
+          </span>
+        </div>
+      </div>
+    );
   }
 
   // Caso 1: iPhone/iPad abierto en Safari estándar (no standalone)
   if (isIOS && !isStandalone) {
     return (
-      <div className="flex-none mb-3 p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/25 shadow-md">
+      <div data-tour="push-manager" className="flex-none mb-3 p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/25 shadow-md">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-2.5 min-w-0">
             <div className="h-8 w-8 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center shrink-0 mt-0.5">

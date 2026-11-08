@@ -60,6 +60,7 @@ export function BottomNav({ role }: { role?: string }) {
                 {/* 1. Tablero */}
                 <Link 
                     href="/dashboard"
+                    data-tour="bottom-nav-tablero"
                     className={`flex flex-col items-center justify-center flex-1 py-1 transition-all active:scale-95 ${
                         isTableroActive ? "text-primary font-bold" : "text-zinc-400 hover:text-zinc-200"
                     }`}
@@ -76,6 +77,7 @@ export function BottomNav({ role }: { role?: string }) {
                 {/* 2. Historial */}
                 <Link 
                     href="/dashboard/tickets/historial"
+                    data-tour="bottom-nav-historial"
                     className={`flex flex-col items-center justify-center flex-1 py-1 transition-all active:scale-95 ${
                         isHistorialActive ? "text-primary font-bold" : "text-zinc-400 hover:text-zinc-200"
                     }`}
@@ -93,6 +95,7 @@ export function BottomNav({ role }: { role?: string }) {
                 <div className="flex flex-col items-center justify-center flex-1 relative -top-3">
                     <Link
                         href="/dashboard/tickets/new"
+                        data-tour="bottom-nav-nuevo"
                         className={`h-12 w-12 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-90 ${
                             isNewActive 
                                 ? "bg-white text-black shadow-white/30 scale-105" 
@@ -108,6 +111,7 @@ export function BottomNav({ role }: { role?: string }) {
                 {/* 4. Opción Contextual (Técnicos / Equipo / Servicios) */}
                 <Link 
                     href={secondaryItem.href}
+                    data-tour="bottom-nav-secondary"
                     className={`flex flex-col items-center justify-center flex-1 py-1 transition-all active:scale-95 ${
                         secondaryItem.active ? "text-primary font-bold" : "text-zinc-400 hover:text-zinc-200"
                     }`}
@@ -126,6 +130,7 @@ export function BottomNav({ role }: { role?: string }) {
                     <SheetTrigger asChild>
                         <button 
                             type="button"
+                            data-tour="bottom-nav-menu"
                             className="flex flex-col items-center justify-center flex-1 py-1 text-zinc-400 hover:text-zinc-200 transition-all active:scale-95"
                         >
                             <Menu className="h-5 w-5" />

@@ -21,7 +21,8 @@ import {
   Layers,
   ArrowRight,
   Zap,
-  Check
+  Check,
+  Smartphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -37,7 +38,7 @@ interface TourStep {
   detail: string;
   autoOpenTicket?: boolean;
   autoCloseTicket?: boolean;
-  specialShowcase?: "sla" | "chat" | "triage";
+  specialShowcase?: "sla" | "chat" | "triage" | "pwa";
 }
 
 const STEPS: TourStep[] = [
@@ -146,7 +147,8 @@ const STEPS: TourStep[] = [
     badge: "Supervisión de Cuadrilla",
     badgeColor: "bg-blue-500/10 text-blue-400 border-blue-500/30",
     title: "9. Directorio y Capacidad Técnica",
-    targetSelector: '[data-tour="nav-tecnicos"]',
+    targetSelector: '[data-tour="nav-tecnicos"], [data-tour="bottom-nav-secondary"], [data-tour="bottom-nav-menu"]',
+    indicatorText: "Técnicos de Soporte",
     actionText: "Pulsa en 'Técnicos de Soporte' en el menú",
     detail: "Supervisa la carga de trabajo activa de cada técnico, sus especialidades certificadas, su estado (Disponible, En Terreno, Fuera de turno) y su calificación de satisfacción CSAT (1.0 a 5.0 estrellas).",
     autoCloseTicket: true
@@ -157,7 +159,8 @@ const STEPS: TourStep[] = [
     badge: "Multi-Empresa & B2B",
     badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/30",
     title: "10. Clientes y Empresas Multi-Tenant",
-    targetSelector: '[data-tour="nav-clientes"]',
+    targetSelector: '[data-tour="nav-clientes"], [data-tour="bottom-nav-menu"]',
+    indicatorText: "Clientes y Empresas",
     actionText: "Explora el módulo de 'Clientes y Empresas'",
     detail: "Permite gestionar múltiples empresas cliente de forma aislada y segura. Cada cliente solo visualiza los requerimientos y métricas de su propia organización con soporte para Administradores de Empresa.",
     autoCloseTicket: true
@@ -168,7 +171,8 @@ const STEPS: TourStep[] = [
     badge: "ANS & Catálogo TI",
     badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
     title: "11. Catálogo de Servicios Contractuales",
-    targetSelector: '[data-tour="nav-servicios"]',
+    targetSelector: '[data-tour="nav-servicios"], [data-tour="bottom-nav-menu"]',
+    indicatorText: "Catálogo de Servicios",
     actionText: "Revisa la lista de servicios y tiempos máximos",
     detail: "Define los compromisos de atención por servicio: horas máximas de resolución y tiempos de primera respuesta (ej: 4h para fallas críticas de servidor vs 24h para configuraciones estándar).",
     autoCloseTicket: true
@@ -179,7 +183,8 @@ const STEPS: TourStep[] = [
     badge: "Trazabilidad y Auditoría",
     badgeColor: "bg-slate-500/10 text-slate-300 border-slate-500/30",
     title: "12. Historial Centralizado y Búsqueda Predictiva",
-    targetSelector: '[data-tour="nav-historial"]',
+    targetSelector: '[data-tour="nav-historial"], [data-tour="bottom-nav-historial"], [data-tour="bottom-nav-menu"]',
+    indicatorText: "Historial Centralizado",
     actionText: "Consulta el archivo histórico de requerimientos",
     detail: "Buscador predictivo por folio #, cliente o técnico. Permite auditar qué sucedió en cada caso, el tiempo exacto que tomó resolverlo y descargar el informe formal para cobros o auditorías.",
     autoCloseTicket: true
@@ -190,7 +195,8 @@ const STEPS: TourStep[] = [
     badge: "Business Intelligence",
     badgeColor: "bg-purple-500/10 text-purple-400 border-purple-500/30",
     title: "13. Cuadro de Mando Ejecutivo & Analítica ANS",
-    targetSelector: '[data-tour="nav-dashboards"]',
+    targetSelector: '[data-tour="nav-dashboards"], [data-tour="bottom-nav-menu"]',
+    indicatorText: "Métricas y Análisis SLA",
     actionText: "Haz clic en 'Métricas y Análisis' para ver gráficos",
     detail: "Tablero analítico con gráficos interactivos que audita el porcentaje de cumplimiento de SLA (verde/rojo), distribución de demanda por empresa cliente, técnicos más productivos y proyección de eficiencia.",
     autoCloseTicket: true
@@ -201,10 +207,12 @@ const STEPS: TourStep[] = [
     badge: "Movilidad Extrema",
     badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
     title: "14. Aplicación Web Progresiva (PWA) & Push",
-    targetSelector: '[data-tour="push-manager"]',
-    actionText: "Activa las notificaciones en tu celular",
+    targetSelector: '[data-tour="push-manager"], [data-tour="tour-user-profile"]',
+    indicatorText: "Notificaciones Web Push PWA",
+    actionText: "Activa las notificaciones en tu celular o PC",
     detail: "La plataforma funciona en celulares iPhone y Android como una aplicación instalable, enviando alertas sonoras y vibratorias en tiempo real vía Web Push VAPID sin intermediarios.",
-    autoCloseTicket: true
+    autoCloseTicket: true,
+    specialShowcase: "pwa"
   },
   // PASO 15: FIN DEL TOUR
   {
@@ -213,6 +221,7 @@ const STEPS: TourStep[] = [
     badgeColor: "bg-sky-500/10 text-sky-400 border-sky-500/30",
     title: "15. ¡Recorrido Completo! Operación en Vivo Activada",
     targetSelector: '[data-tour="kanban-board"], [data-tour="kanban-board-mobile"]',
+    indicatorText: "Plataforma 100% Operativa",
     actionText: "Ya puedes interactuar con libertad en la plataforma",
     detail: "El recorrido guiado ha concluido con éxito. Puedes mover requerimientos, registrar nuevas solicitudes, interactuar en el chat en vivo o relanzar este tour en cualquier momento desde el botón flotante inferior.",
     autoCloseTicket: true
@@ -381,15 +390,27 @@ export function TourGuide() {
         return;
       }
 
-      // Buscar el selector en el documento (soporta selectores compuestos)
-      const el = document.querySelector(step.targetSelector) as HTMLElement | null;
+      // Buscar todos los elementos coincidentes y seleccionar el primer elemento visible en pantalla
+      const elements = document.querySelectorAll(step.targetSelector);
+      let el: HTMLElement | null = null;
+      for (let i = 0; i < elements.length; i++) {
+        const candidate = elements[i] as HTMLElement;
+        const r = candidate.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          el = candidate;
+          break;
+        }
+      }
+
       if (el) {
         const rect = el.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
-          // Solo hacer scroll suave si el elemento no es fixed/sticky
+          // Solo hacer scroll suave si el elemento no es fixed/sticky y no está en pantalla completa
           const style = window.getComputedStyle(el);
           if (style.position !== 'fixed' && style.position !== 'sticky') {
-            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+            if (rect.top < 60 || rect.bottom > window.innerHeight - 60) {
+              el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+            }
           }
 
           const currentTop = rect.top;
@@ -406,7 +427,7 @@ export function TourGuide() {
             right: rect.right
           });
 
-          // Verificar si las coordenadas se estabilizaron (terminó la animación de entrada de Radix Sheet)
+          // Verificar si las coordenadas se estabilizaron (terminó la animación de entrada de Radix Sheet o transición de pantalla)
           if (
             lastRect &&
             Math.abs(lastRect.left - currentLeft) < 1.5 &&
@@ -421,8 +442,7 @@ export function TourGuide() {
 
           lastRect = { top: currentTop, left: currentLeft, width: currentWidth, height: currentHeight };
 
-          // Detener el sondeo solo tras confirmar estabilidad durante al menos 3 chequeos
-          // y cuando hayan pasado al menos 4 intentos (~320ms, tiempo de animación de Radix Sheet)
+          // Detener el sondeo tras confirmar estabilidad durante al menos 3 chequeos
           if (stableCount >= 3 && attempts >= 4) {
             if (pollInterval) {
               clearInterval(pollInterval);
@@ -438,17 +458,30 @@ export function TourGuide() {
           clearInterval(pollInterval);
           pollInterval = null;
         }
-        const fallbackEl = step.targetSelector ? (document.querySelector(step.targetSelector) as HTMLElement | null) : null;
-        if (fallbackEl) {
-          const rect = fallbackEl.getBoundingClientRect();
-          setTargetRect({
-            top: rect.top,
-            left: rect.left,
-            width: rect.width,
-            height: rect.height,
-            bottom: rect.bottom,
-            right: rect.right
-          });
+        if (step.targetSelector) {
+          const fallbackList = document.querySelectorAll(step.targetSelector);
+          let foundFallback: HTMLElement | null = null;
+          for (let i = 0; i < fallbackList.length; i++) {
+            const candidate = fallbackList[i] as HTMLElement;
+            const r = candidate.getBoundingClientRect();
+            if (r.width > 0 && r.height > 0) {
+              foundFallback = candidate;
+              break;
+            }
+          }
+          if (foundFallback) {
+            const rect = foundFallback.getBoundingClientRect();
+            setTargetRect({
+              top: rect.top,
+              left: rect.left,
+              width: rect.width,
+              height: rect.height,
+              bottom: rect.bottom,
+              right: rect.right
+            });
+          } else {
+            setTargetRect(null);
+          }
         } else {
           setTargetRect(null);
         }
@@ -461,17 +494,21 @@ export function TourGuide() {
 
     const onScrollOrResize = () => {
       if (!step.targetSelector) return;
-      const el = document.querySelector(step.targetSelector) as HTMLElement | null;
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        setTargetRect({
-          top: rect.top,
-          left: rect.left,
-          width: rect.width,
-          height: rect.height,
-          bottom: rect.bottom,
-          right: rect.right
-        });
+      const elements = document.querySelectorAll(step.targetSelector);
+      for (let i = 0; i < elements.length; i++) {
+        const candidate = elements[i] as HTMLElement;
+        const rect = candidate.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          setTargetRect({
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            bottom: rect.bottom,
+            right: rect.right
+          });
+          break;
+        }
       }
     };
 
@@ -545,6 +582,25 @@ export function TourGuide() {
         width: popoverWidth,
         placement,
         arrowLeft: popoverWidth,
+        arrowTop
+      };
+    }
+
+    // CASO 2: En escritorio y el target está en el menú lateral izquierdo (Sidebar, w-60 ~ 240px)
+    // posicionamos la tarjeta a la DERECHA del elemento del menú, centrada verticalmente
+    if (!isMobile && targetRect.right < 320 && window.innerWidth - targetRect.right > popoverWidth + 24) {
+      const placement = "right" as const;
+      const left = targetRect.right + 20;
+      const targetCenterY = targetRect.top + targetRect.height / 2;
+      const top = Math.max(20, Math.min(window.innerHeight - estimatedHeight - 20, targetCenterY - estimatedHeight / 2));
+      const arrowTop = Math.max(24, Math.min(estimatedHeight - 24, targetCenterY - top));
+
+      return {
+        top,
+        left,
+        width: popoverWidth,
+        placement,
+        arrowLeft: 0,
         arrowTop
       };
     }
@@ -682,6 +738,12 @@ export function TourGuide() {
                 className="absolute -right-1.5 w-3 h-3 bg-[#0d121c] border-t border-r border-primary/40 rotate-45 transform -translate-y-1/2 z-20"
               />
             )}
+            {popoverPosition.placement === "right" && (
+              <div
+                style={{ top: `${popoverPosition.arrowTop || 40}px` }}
+                className="absolute -left-1.5 w-3 h-3 bg-[#0d121c] border-b border-l border-primary/40 rotate-45 transform -translate-y-1/2 z-20"
+              />
+            )}
 
             {/* Encabezado del Popover */}
             <div className="bg-gradient-to-r from-zinc-950 to-zinc-900 border-b border-white/10 px-4 py-2.5 flex items-center justify-between">
@@ -793,6 +855,26 @@ export function TourGuide() {
                     1. Coincidencia por especialidad técnica (Software, Redes, Equipos TI).<br />
                     2. Balance equitativo al técnico disponible con <strong>menor número de tickets activos</strong>.
                   </p>
+                </div>
+              )}
+
+              {/* SHOWCASE ESPECIAL 4: PWA Y NOTIFICACIONES PUSH */}
+              {step.specialShowcase === "pwa" && (
+                <div className="bg-black/40 border border-emerald-500/30 rounded-xl p-3 space-y-2 text-xs">
+                  <div className="font-black text-emerald-300 uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                    <Smartphone size={14} className="text-emerald-400" />
+                    <span>Movilidad Nativa & Notificaciones:</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+                    <div className="bg-zinc-900/80 p-2 rounded-lg border border-white/5">
+                      <span className="font-bold text-white block">📱 PWA Instalable</span>
+                      <span className="text-zinc-400">Instalación directa en iPhone y Android sin App Store.</span>
+                    </div>
+                    <div className="bg-zinc-900/80 p-2 rounded-lg border border-white/5">
+                      <span className="font-bold text-emerald-400 block">🔔 Web Push VAPID</span>
+                      <span className="text-zinc-400">Alertas en vivo aun con la pantalla bloqueada.</span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
