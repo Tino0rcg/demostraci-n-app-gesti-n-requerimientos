@@ -628,6 +628,15 @@ export function TourGuide() {
   const step = STEPS[currentStep];
   const progressPercent = Math.round(((currentStep + 1) / STEPS.length) * 100);
 
+  // Vistas completas que deben mostrar el 100% de la pantalla sin sombras negras ni bloqueos
+  const isFullViewStep = step?.id === "step-2" || 
+                         step?.id === "step-9" || 
+                         step?.id === "step-10" || 
+                         step?.id === "step-11" || 
+                         step?.id === "step-12" || 
+                         step?.id === "step-13" || 
+                         step?.id === "step-15";
+
   // Posicionamiento dinámico del popover anclado con flecha indicadora
   const popoverPosition = useMemo(() => {
     if (typeof window === "undefined") {
@@ -701,6 +710,25 @@ export function TourGuide() {
       };
     }
 
+    // CASO VISTAS COMPLETAS EN ESCRITORIO (Pasos 9, 10, 11, 12, 13, 15):
+    // Alinear la tarjeta hacia el lado derecho del contenido para dejar 100% visible
+    // toda la información de la vista (tablas, fichas de especialistas, clientes, catálogo y gráficos) a la izquierda
+    if (isFullViewStep && !isMobile && window.innerWidth >= 1024 && targetRect.width > popoverWidth + 60) {
+      const top = Math.max(20, Math.min(window.innerHeight - cardHeight - 20, targetRect.bottom + 14));
+      const rightAlignedLeft = targetRect.right - popoverWidth - 12;
+      const left = Math.max(targetRect.left + 12, Math.min(window.innerWidth - popoverWidth - 16, rightAlignedLeft));
+      const arrowLeft = Math.max(24, Math.min(popoverWidth - 24, popoverWidth - 48));
+
+      return {
+        top,
+        left,
+        width: popoverWidth,
+        placement: "bottom" as const,
+        arrowLeft,
+        arrowTop: 50
+      };
+    }
+
     // CASO 3: Posicionamiento vertical (móvil y elementos centrales)
     const spaceBelow = window.innerHeight - targetRect.bottom;
     const spaceAbove = targetRect.top;
@@ -741,7 +769,7 @@ export function TourGuide() {
       arrowLeft,
       arrowTop: 50
     };
-  }, [targetRect, step?.specialShowcase, measuredCardHeight]);
+  }, [targetRect, step?.specialShowcase, measuredCardHeight, isFullViewStep]);
 
   if (!mounted) return null;
 
@@ -772,24 +800,30 @@ export function TourGuide() {
       {/* Capa de Tour Interactivo (Overlay) */}
       {isOpen && (
         <div data-tour-container="true" data-tour-active={isOpen ? "true" : "false"} className="fixed inset-0 z-[10000] pointer-events-none">
-          {/* Fondo interactivo: clic en cualquier zona oscura para salir */}
+          {/* Fondo interactivo: solo en pasos individuales aplica un velo suave (0.35); en vistas completas es 100% transparente para permitir ver y hacer scroll libremente en el contenido */}
           <div
-            onClick={handleClose}
-            className="fixed inset-0 z-30 pointer-events-auto cursor-pointer"
-            title="Haz clic en cualquier zona oscura para salir del tour y usar la app libremente"
+            onClick={isFullViewStep ? undefined : handleClose}
+            className={`fixed inset-0 z-30 transition-colors duration-300 ${
+              isFullViewStep 
+                ? "pointer-events-none bg-transparent" 
+                : "pointer-events-auto cursor-pointer bg-black/35"
+            }`}
+            title={isFullViewStep ? "" : "Haz clic fuera para salir del tour"}
           />
 
           {/* Halo de luz / Spotlight NO oscilante (fondo sólido y estable sin parpadeo) */}
           {targetRect ? (
             <>
-              {/* Corte con sombra estática de 9999px (sin animate-pulse para evitar titileo) */}
+              {/* En vistas completas no aplicamos sombra negra exterior (0 0 0 9999px) para que toda la pantalla (tablas, tarjetas, gráficos) quede 100% visible, nítida e iluminada */}
               <div
                 style={{
                   top: Math.max(0, targetRect.top - 6),
                   left: Math.max(0, targetRect.left - 6),
                   width: targetRect.width + 12,
                   height: targetRect.height + 12,
-                  boxShadow: "0 0 0 9999px rgba(9, 9, 11, 0.82), 0 0 25px rgba(59, 130, 246, 0.4)",
+                  boxShadow: isFullViewStep
+                    ? "0 0 35px rgba(59, 130, 246, 0.6), inset 0 0 15px rgba(59, 130, 246, 0.2)"
+                    : "0 0 0 9999px rgba(9, 9, 11, 0.38), 0 0 25px rgba(59, 130, 246, 0.5)",
                   borderRadius: "16px",
                   border: "2px solid rgba(59, 130, 246, 0.9)"
                 }}
@@ -811,8 +845,8 @@ export function TourGuide() {
               </div>
             </>
           ) : (
-            /* Fondo oscuro estable si el selector no está en el viewport */
-            <div className="fixed inset-0 z-40 bg-zinc-950/85 pointer-events-none transition-opacity duration-300" />
+            /* Fondo claro y transparente en transiciones */
+            <div className={`fixed inset-0 z-40 ${isFullViewStep ? "bg-transparent" : "bg-zinc-950/25"} pointer-events-none transition-opacity duration-300`} />
           )}
 
           {/* Tarjeta flotante anclada con flecha indicadora */}
