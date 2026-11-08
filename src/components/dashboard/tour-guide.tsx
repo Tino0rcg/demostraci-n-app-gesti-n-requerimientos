@@ -234,11 +234,30 @@ export function TourGuide() {
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<{ top: number; left: number; width: number; height: number; bottom: number; right: number } | null>(null);
   const [pillVisible, setPillVisible] = useState(true);
+  const [measuredCardHeight, setMeasuredCardHeight] = useState<number>(380);
+  const cardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Medir dinámicamente la altura real de la tarjeta flotante
+  useEffect(() => {
+    if (!isOpen || !cardRef.current) return;
+    const updateH = () => {
+      if (cardRef.current) {
+        const h = cardRef.current.offsetHeight;
+        if (h > 100) {
+          setMeasuredCardHeight(h);
+        }
+      }
+    };
+    updateH();
+    const ro = new ResizeObserver(updateH);
+    ro.observe(cardRef.current);
+    return () => ro.disconnect();
+  }, [isOpen, currentStep]);
 
   // Marcar el body con data-tour-active para prevenir que componentes externos como Radix Sheet se cierren
   useEffect(() => {
@@ -547,13 +566,13 @@ export function TourGuide() {
 
     const isMobile = window.innerWidth < 768;
     const popoverWidth = isMobile ? Math.min(window.innerWidth - 24, 380) : 410;
-    const estimatedHeight = step?.specialShowcase ? 380 : 260;
+    const cardHeight = Math.max(measuredCardHeight, step?.specialShowcase ? 400 : 360);
 
     if (!targetRect) {
       // Centrar en pantalla si no hay elemento target disponible
       return {
-        top: Math.max(20, (window.innerHeight - estimatedHeight) / 2),
-        left: Math.max(12, (window.innerWidth - popoverWidth) / 2),
+        top: Math.max(20, Math.round((window.innerHeight - cardHeight) / 2)),
+        left: Math.max(12, Math.round((window.innerWidth - popoverWidth) / 2)),
         width: popoverWidth,
         placement: "center" as const,
         arrowLeft: popoverWidth / 2,
@@ -561,20 +580,22 @@ export function TourGuide() {
       };
     }
 
-    // Si estamos en pantalla de escritorio y el target está en el panel lateral (lado derecho)
+    // CASO 1: Si estamos en pantalla de escritorio y el target está en el panel lateral (lado derecho)
     // posicionamos la tarjeta a la izquierda del drawer para no tapar los datos ni el chat
     if (!isMobile && targetRect.left > popoverWidth + 24) {
       const placement = "left" as const;
       const left = Math.max(16, targetRect.left - popoverWidth - 16);
       
       const isFullHeight = targetRect.height > window.innerHeight * 0.7;
-      const top = isFullHeight
-        ? Math.max(20, Math.round((window.innerHeight - estimatedHeight) / 2))
-        : Math.max(20, Math.min(window.innerHeight - estimatedHeight - 20, targetRect.top));
+      const idealTop = isFullHeight
+        ? Math.round((window.innerHeight - cardHeight) / 2)
+        : targetRect.top;
+      const maxAllowedTop = Math.max(20, window.innerHeight - cardHeight - 20);
+      const top = Math.max(20, Math.min(maxAllowedTop, idealTop));
 
       const arrowTop = isFullHeight
-        ? Math.round(estimatedHeight / 2)
-        : Math.max(24, Math.min(estimatedHeight - 24, targetRect.top + targetRect.height / 2 - top));
+        ? Math.round(cardHeight / 2)
+        : Math.max(24, Math.min(cardHeight - 24, targetRect.top + targetRect.height / 2 - top));
 
       return {
         top,
@@ -587,13 +608,17 @@ export function TourGuide() {
     }
 
     // CASO 2: En escritorio y el target está en el menú lateral izquierdo (Sidebar, w-60 ~ 240px)
-    // posicionamos la tarjeta a la DERECHA del elemento del menú, centrada verticalmente
+    // posicionamos la tarjeta a la DERECHA del elemento del menú, centrada verticalmente sin taparlo
     if (!isMobile && targetRect.right < 320 && window.innerWidth - targetRect.right > popoverWidth + 24) {
       const placement = "right" as const;
       const left = targetRect.right + 20;
       const targetCenterY = targetRect.top + targetRect.height / 2;
-      const top = Math.max(20, Math.min(window.innerHeight - estimatedHeight - 20, targetCenterY - estimatedHeight / 2));
-      const arrowTop = Math.max(24, Math.min(estimatedHeight - 24, targetCenterY - top));
+      
+      // La tarjeta NUNCA debe sobrepasar el borde inferior visible de la pantalla
+      const maxAllowedTop = Math.max(20, window.innerHeight - cardHeight - 24);
+      const idealTop = targetCenterY - cardHeight / 2;
+      const top = Math.max(20, Math.min(maxAllowedTop, idealTop));
+      const arrowTop = Math.max(24, Math.min(cardHeight - 28, targetCenterY - top));
 
       return {
         top,
@@ -605,26 +630,36 @@ export function TourGuide() {
       };
     }
 
+    // CASO 3: Posicionamiento vertical (móvil y elementos centrales)
     const spaceBelow = window.innerHeight - targetRect.bottom;
     const spaceAbove = targetRect.top;
 
     let placement: "bottom" | "top" = "bottom";
     let top = targetRect.bottom + 14;
 
-    if (spaceBelow < estimatedHeight + 16 && spaceAbove > estimatedHeight + 16) {
+    if (spaceBelow < cardHeight + 20 && spaceAbove > cardHeight + 20) {
       placement = "top";
-      top = targetRect.top - estimatedHeight - 14;
-    } else if (spaceBelow < estimatedHeight + 16 && spaceAbove < estimatedHeight + 16) {
-      // Pantalla pequeña o elemento alto: fijar al borde inferior visible
-      top = Math.max(16, window.innerHeight - estimatedHeight - 16);
+      top = targetRect.top - cardHeight - 14;
+    } else if (spaceBelow >= cardHeight + 20) {
       placement = "bottom";
+      top = targetRect.bottom + 14;
+    } else {
+      if (spaceAbove >= spaceBelow) {
+        placement = "top";
+        top = targetRect.top - cardHeight - 14;
+      } else {
+        placement = "bottom";
+        top = targetRect.bottom + 14;
+      }
     }
 
+    // Asegurar SIEMPRE que top no empuje el pie de la tarjeta fuera de la pantalla
+    const maxTop = Math.max(16, window.innerHeight - cardHeight - 20);
+    top = Math.max(16, Math.min(maxTop, top));
+
     let left = targetRect.left + targetRect.width / 2 - popoverWidth / 2;
-    // Evitar que se desborde del viewport
     left = Math.max(12, Math.min(window.innerWidth - popoverWidth - 12, left));
 
-    // Flecha apunta exactamente al centro del elemento destacado
     const arrowLeft = Math.max(24, Math.min(popoverWidth - 24, targetRect.left + targetRect.width / 2 - left));
 
     return {
@@ -635,7 +670,7 @@ export function TourGuide() {
       arrowLeft,
       arrowTop: 50
     };
-  }, [targetRect, step?.specialShowcase]);
+  }, [targetRect, step?.specialShowcase, measuredCardHeight]);
 
   if (!mounted) return null;
 
@@ -711,11 +746,13 @@ export function TourGuide() {
 
           {/* Tarjeta flotante anclada con flecha indicadora */}
           <div
+            ref={cardRef}
             id="tour-modal-card"
             style={{
               top: `${popoverPosition.top}px`,
               left: `${popoverPosition.left}px`,
-              width: `${popoverPosition.width}px`
+              width: `${popoverPosition.width}px`,
+              maxHeight: `calc(100vh - ${popoverPosition.top + 16}px)`
             }}
             className="fixed z-50 pointer-events-auto bg-[#0d121c] text-white rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.6)] border border-primary/40 overflow-hidden flex flex-col transition-all duration-300 backdrop-blur-xl animate-in zoom-in-95 duration-200"
           >
@@ -746,7 +783,7 @@ export function TourGuide() {
             )}
 
             {/* Encabezado del Popover */}
-            <div className="bg-gradient-to-r from-zinc-950 to-zinc-900 border-b border-white/10 px-4 py-2.5 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-zinc-950 to-zinc-900 border-b border-white/10 px-4 py-2.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <span className="flex h-2 w-2 rounded-full bg-primary animate-ping" />
                 <span className="font-black text-[11px] tracking-wider uppercase text-zinc-300">
@@ -765,7 +802,7 @@ export function TourGuide() {
             </div>
 
             {/* Barra de progreso */}
-            <div className="w-full bg-white/5 h-1">
+            <div className="w-full bg-white/5 h-1 shrink-0">
               <div
                 className="bg-gradient-to-r from-primary to-blue-500 h-1 transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
@@ -773,7 +810,7 @@ export function TourGuide() {
             </div>
 
             {/* Cuerpo del Popover */}
-            <div className="p-4 space-y-2.5 max-h-[62vh] overflow-y-auto custom-scrollbar">
+            <div className="p-3.5 sm:p-4 space-y-2.5 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
               {/* Badge de Categoría y Porcentaje */}
               <div className="flex items-center justify-between">
                 <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${step.badgeColor}`}>
@@ -880,7 +917,7 @@ export function TourGuide() {
             </div>
 
             {/* Controles del Pie de Página */}
-            <div className="bg-zinc-950/90 border-t border-white/10 px-3.5 py-2.5 flex items-center justify-between gap-2">
+            <div className="bg-zinc-950/90 border-t border-white/10 px-3.5 py-2.5 flex items-center justify-between gap-2 shrink-0">
               <Button
                 variant="outline"
                 size="sm"
