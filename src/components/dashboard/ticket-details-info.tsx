@@ -359,10 +359,10 @@ export function TicketDetailsInfo({ ticketId, onUpdate }: Props) {
     if (!tempMessage) return;
 
     // Obtener autor sin peticiones de red previas
-    let authorId = currentUserId || currentUserProfile?.id;
+    let authorId: string | undefined = currentUserId || currentUserProfile?.id;
     if (!authorId) {
       const { data: userData } = await supabase.auth.getUser();
-      authorId = userData.user?.id || null;
+      authorId = userData.user?.id;
     }
     if (!authorId) return;
 

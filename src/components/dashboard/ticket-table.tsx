@@ -127,7 +127,7 @@ export function TicketTable({ tickets, allUsers }: { tickets: Ticket[], allUsers
     },
     {
       accessorKey: "priority",
-      header: <span className="hidden lg:table-cell">Priority</span>,
+      header: () => <span className="hidden lg:table-cell">Priority</span>,
       cell: ({ row }) => {
           const priority = row.getValue("priority") as TicketPriority;
           return <Badge variant="outline" className={`hidden lg:inline-flex ${priorityColorMap[priority]}`}>{priority}</Badge>
@@ -135,7 +135,7 @@ export function TicketTable({ tickets, allUsers }: { tickets: Ticket[], allUsers
     },
     {
       accessorKey: "assigneeId",
-      header: <span className="hidden sm:table-cell">Assignee</span>,
+      header: () => <span className="hidden sm:table-cell">Assignee</span>,
       cell: ({ row }) => {
           const assignee = getAssignee(row.getValue("assigneeId"));
           if (!assignee) return <span className="text-muted-foreground hidden sm:inline">Unassigned</span>;

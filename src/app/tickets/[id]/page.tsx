@@ -19,29 +19,30 @@ import {
 } from 'lucide-react';
 
 type PageProps = {
-    params: {
+    params: Promise<{
         id: string;
-    };
+    }>;
 };
 
 const statusVariant: { [key in TicketStatus]: "default" | "secondary" | "destructive" | "outline" } = {
-    Open: "default",
-    'In Progress': "secondary",
-    Resolved: "outline",
-    Closed: "destructive",
+    Ingresado: "default",
+    'En proceso': "secondary",
+    'Espera de aprobación': "outline",
+    Terminado: "destructive",
 }
 
 const priorityVariant: { [key in TicketPriority]: "default" | "secondary" | "destructive" | "outline" } = {
-    Low: "outline",
-    Medium: "secondary",
-    High: "default",
-    Critical: "destructive",
+    Baja: "outline",
+    Media: "secondary",
+    Alta: "default",
+    Crítica: "destructive",
 }
 
 const getUser = (userId: string | null): User | undefined => users.find(u => u.id === userId);
 
-export default function TicketDetailsPage({ params }: PageProps) {
-    const ticket = tickets.find(t => t.id === params.id);
+export default async function TicketDetailsPage({ params }: PageProps) {
+    const { id } = await params;
+    const ticket = tickets.find(t => t.id === id);
     if (!ticket) {
         notFound();
     }
@@ -137,7 +138,7 @@ export default function TicketDetailsPage({ params }: PageProps) {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="unassigned">Unassigned</SelectItem>
-                                    {users.filter(u => u.role !== 'User').map(user => (
+                                    {users.filter(u => u.role !== 'Usuario').map(user => (
                                         <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
                                     ))}
                                 </SelectContent>

@@ -118,13 +118,13 @@ export function PushManager() {
 
       // ⚡ CRÍTICO PARA IOS/SAFARI: Solicitar permiso DIRECTAMENTE en el primer tick del clic
       // (Cualquier 'await' previo rompe el token de gesto de usuario en WebKit)
-      let currentPerm = Notification.permission;
+      let currentPerm: NotificationPermission = Notification.permission;
       if (currentPerm !== "granted") {
         try {
           currentPerm = await Notification.requestPermission();
         } catch {
           // Fallback para navegadores antiguos con callback
-          currentPerm = await new Promise((resolve) => {
+          currentPerm = await new Promise<NotificationPermission>((resolve) => {
             Notification.requestPermission((p) => resolve(p));
           });
         }
