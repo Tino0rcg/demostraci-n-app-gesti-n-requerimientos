@@ -266,6 +266,7 @@ export default function DashboardRootPage() {
 
             <Sheet open={!!selectedId} onOpenChange={(val) => !val && setSelectedId(null)}>
                 <SheetContent 
+                    data-tour="ticket-sheet-content"
                     onPointerDownOutside={(e) => {
                         const target = e.target as HTMLElement | null;
                         if (
@@ -290,7 +291,7 @@ export default function DashboardRootPage() {
                 >
                     <SheetTitle className="sr-only">Detalles del Requerimiento</SheetTitle>
                     {selectedId && (
-                        <div className="h-full flex flex-col p-3 sm:p-6 pt-[max(1.25rem,env(safe-area-inset-top)+0.5rem)] sm:pt-6">
+                        <div data-tour="ticket-details-drawer" className="h-full flex flex-col p-3 sm:p-6 pt-[max(1.25rem,env(safe-area-inset-top)+0.5rem)] sm:pt-6">
                             <TicketDetailsInfo ticketId={selectedId} onUpdate={handleUpdate} />
                         </div>
                     )}

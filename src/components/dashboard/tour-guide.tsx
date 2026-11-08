@@ -32,6 +32,7 @@ interface TourStep {
   badgeColor: string;
   title: string;
   targetSelector?: string;
+  indicatorText?: string;
   actionText: string;
   detail: string;
   autoOpenTicket?: boolean;
@@ -47,6 +48,7 @@ const STEPS: TourStep[] = [
     badgeColor: "bg-sky-500/10 text-sky-400 border-sky-500/30",
     title: "1. Panel de Bienvenida y Roles de Usuario",
     targetSelector: '[data-tour="tour-user-profile"]',
+    indicatorText: "Tu Perfil Corporativo",
     actionText: "Observa tu perfil corporativo en la cabecera",
     detail: "Estás conectado como Administrador Full con control total sobre requerimientos, acuerdos de nivel de servicio (SLA/ANS), catálogo de soluciones, directorio técnico y empresas cliente contratantes.",
     autoCloseTicket: true
@@ -58,6 +60,7 @@ const STEPS: TourStep[] = [
     badgeColor: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
     title: "2. Tablero de Control Kanban (4 Estados)",
     targetSelector: '[data-tour="kanban-board"], [data-tour="kanban-board-mobile"]',
+    indicatorText: "Tablero Kanban en Vivo",
     actionText: "Visualiza el flujo de trabajo de izquierda a derecha",
     detail: "Las solicitudes avanzan por 4 estados: Ingresado, En proceso, Espera de aprobación y Terminado. El tablero se actualiza al instante en segundo plano vía WebSockets sin recargar la página.",
     autoCloseTicket: true
@@ -69,6 +72,7 @@ const STEPS: TourStep[] = [
     badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/30",
     title: "3. Semáforo y Tiempos de Compromiso (SLA)",
     targetSelector: '[data-tour="sla-indicator"], [data-tour="ticket-card"]',
+    indicatorText: "Semáforo y Folio SLA",
     actionText: "Revisa el punto de color junto al folio # del requerimiento",
     detail: "Cada requerimiento tiene un cronómetro legal según el contrato de la empresa. El semáforo avisa la urgencia: Verde (a tiempo, <70%), Amarillo (en riesgo preventivo, 70-100%) y Rojo (plazo excedido / incumplimiento de ANS).",
     autoCloseTicket: true
@@ -79,9 +83,10 @@ const STEPS: TourStep[] = [
     badge: "Ficha Técnica Interactiva",
     badgeColor: "bg-blue-500/10 text-blue-400 border-blue-500/30",
     title: "4. Detalle del Requerimiento en Panel Lateral",
-    targetSelector: '[data-tour="ticket-card"]',
-    actionText: "Pulsa sobre esta tarjeta para desplegar la ficha completa",
-    detail: "Al hacer clic en cualquier requerimiento se despliega un panel lateral optimizado para computadores y pantallas táctiles con el historial, solicitante, técnico responsable y chat en vivo.",
+    targetSelector: '[data-tour="ticket-sheet-content"], [data-tour="ticket-details-drawer"]',
+    indicatorText: "Panel Lateral con Ficha Completa",
+    actionText: "Ficha técnica completa desplegada en el panel lateral",
+    detail: "Al abrir cualquier requerimiento se despliega este panel lateral optimizado para computadores y pantallas táctiles con el historial, solicitante, técnico responsable y chat en vivo.",
     autoOpenTicket: true
   },
   // PASO 5: PAUSA INTELIGENTE DEL SLA
@@ -91,6 +96,7 @@ const STEPS: TourStep[] = [
     badgeColor: "bg-purple-500/10 text-purple-400 border-purple-500/30",
     title: "5. Cronómetro con Pausa Inteligente",
     targetSelector: '[data-tour="ticket-sla-timer"]',
+    indicatorText: "Cronómetro Pausado de SLA",
     actionText: "Observa el reloj en la cabecera del requerimiento",
     detail: "¡Pausa justa de evaluación! Cuando el técnico concluye la solución y pasa el caso a 'Espera de aprobación', el cronómetro se congela automáticamente. El tiempo que el cliente demore en revisar no castiga la puntualidad ni la evaluación del técnico.",
     autoOpenTicket: true,
@@ -103,6 +109,7 @@ const STEPS: TourStep[] = [
     badgeColor: "bg-cyan-500/10 text-cyan-400 border-cyan-500/30",
     title: "6. Chat en Vivo de Latencia Cero (0ms)",
     targetSelector: '[data-tour="ticket-chat-area"]',
+    indicatorText: "Chat en Vivo de 0ms",
     actionText: "Escribe una respuesta o consulta en la bitácora",
     detail: "Entrega instantánea con interfaz optimista (0ms en pantalla) y transmisión por WebSockets. Incluye aviso sonoro, indicador de 'escribiendo...' en tiempo real y registro inmutable de auditoría para ambas partes.",
     autoOpenTicket: true,
@@ -115,6 +122,7 @@ const STEPS: TourStep[] = [
     badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
     title: "7. Flujo de Aprobación Formal del Cliente",
     targetSelector: '[data-tour="ticket-approval-actions"], [data-tour="ticket-chat-area"]',
+    indicatorText: "Aprobar o Rechazar Solución",
     actionText: "El cliente valida con 'Aprobar' o 'Rechazar'",
     detail: "Garantía contractual de conformidad: Un ticket solo se da por 'Terminado' cuando el cliente valida la solución. Si la rechaza, debe registrar el motivo y el ticket vuelve automáticamente a 'En proceso' reactivando el SLA.",
     autoOpenTicket: true
@@ -126,6 +134,7 @@ const STEPS: TourStep[] = [
     badgeColor: "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30",
     title: "8. Botón '+ Nuevo Ticket' & Triaje con IA",
     targetSelector: '[data-tour="new-ticket-btn"], [data-tour="new-ticket-sidebar-btn"]',
+    indicatorText: "Crear Nuevo Ticket",
     actionText: "Haz clic aquí para ingresar una solicitud bajo SLA",
     detail: "Permite al cliente o supervisor reportar incidentes con evidencia fotográfica. El algoritmo de triaje analiza la categoría de la falla (Redes, Software, Equipos TI) y asigna automáticamente al especialista disponible con menor carga de trabajo.",
     autoCloseTicket: true,
@@ -309,8 +318,8 @@ export function TourGuide() {
       if (!step) return;
 
       if (step.autoOpenTicket) {
-        // En los pasos 5, 6 y 7 requerimos un ticket en 'Espera de aprobación' para mostrar la pausa de SLA y botones de aprobación
-        if (step.id === "step-5" || step.id === "step-6" || step.id === "step-7") {
+        // En los pasos 4, 5, 6 y 7 requerimos un ticket en 'Espera de aprobación' para mostrar la ficha, la pausa de SLA y botones de aprobación
+        if (step.id === "step-4" || step.id === "step-5" || step.id === "step-6" || step.id === "step-7") {
           window.dispatchEvent(new CustomEvent("tour:open-ticket", { detail: { status: "Espera de aprobación" } }));
           setTimeout(() => {
             const approvedCard = document.querySelector('[data-tour-status="Espera de aprobación"]') as HTMLElement;
@@ -319,7 +328,7 @@ export function TourGuide() {
             }
           }, 80);
         } else {
-          // Paso 4 o apertura general
+          // Apertura general
           window.dispatchEvent(new CustomEvent("tour:open-ticket", {}));
           setTimeout(() => {
             const firstCard = document.querySelector('[data-tour="ticket-card"]') as HTMLElement;
@@ -361,6 +370,8 @@ export function TourGuide() {
     let attempts = 0;
     const maxAttempts = 25; // 25 * 80ms = 2.0 segundos máximo de sondeo
     let pollInterval: any = null;
+    let lastRect: { top: number; left: number; width: number; height: number } | null = null;
+    let stableCount = 0;
 
     const findAndMeasure = () => {
       attempts++;
@@ -375,19 +386,48 @@ export function TourGuide() {
       if (el) {
         const rect = el.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
-          el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
-          const updatedRect = el.getBoundingClientRect();
+          // Solo hacer scroll suave si el elemento no es fixed/sticky
+          const style = window.getComputedStyle(el);
+          if (style.position !== 'fixed' && style.position !== 'sticky') {
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+          }
+
+          const currentTop = rect.top;
+          const currentLeft = rect.left;
+          const currentWidth = rect.width;
+          const currentHeight = rect.height;
+
           setTargetRect({
-            top: updatedRect.top,
-            left: updatedRect.left,
-            width: updatedRect.width,
-            height: updatedRect.height,
-            bottom: updatedRect.bottom,
-            right: updatedRect.right
+            top: currentTop,
+            left: currentLeft,
+            width: currentWidth,
+            height: currentHeight,
+            bottom: rect.bottom,
+            right: rect.right
           });
-          if (pollInterval) {
-            clearInterval(pollInterval);
-            pollInterval = null;
+
+          // Verificar si las coordenadas se estabilizaron (terminó la animación de entrada de Radix Sheet)
+          if (
+            lastRect &&
+            Math.abs(lastRect.left - currentLeft) < 1.5 &&
+            Math.abs(lastRect.top - currentTop) < 1.5 &&
+            Math.abs(lastRect.width - currentWidth) < 1.5 &&
+            Math.abs(lastRect.height - currentHeight) < 1.5
+          ) {
+            stableCount++;
+          } else {
+            stableCount = 0;
+          }
+
+          lastRect = { top: currentTop, left: currentLeft, width: currentWidth, height: currentHeight };
+
+          // Detener el sondeo solo tras confirmar estabilidad durante al menos 3 chequeos
+          // y cuando hayan pasado al menos 4 intentos (~320ms, tiempo de animación de Radix Sheet)
+          if (stableCount >= 3 && attempts >= 4) {
+            if (pollInterval) {
+              clearInterval(pollInterval);
+              pollInterval = null;
+            }
           }
           return;
         }
@@ -489,8 +529,15 @@ export function TourGuide() {
     if (!isMobile && targetRect.left > popoverWidth + 24) {
       const placement = "left" as const;
       const left = Math.max(16, targetRect.left - popoverWidth - 16);
-      const top = Math.max(20, Math.min(window.innerHeight - estimatedHeight - 20, targetRect.top));
-      const arrowTop = Math.max(24, Math.min(estimatedHeight - 24, targetRect.top + targetRect.height / 2 - top));
+      
+      const isFullHeight = targetRect.height > window.innerHeight * 0.7;
+      const top = isFullHeight
+        ? Math.max(20, Math.round((window.innerHeight - estimatedHeight) / 2))
+        : Math.max(20, Math.min(window.innerHeight - estimatedHeight - 20, targetRect.top));
+
+      const arrowTop = isFullHeight
+        ? Math.round(estimatedHeight / 2)
+        : Math.max(24, Math.min(estimatedHeight - 24, targetRect.top + targetRect.height / 2 - top));
 
       return {
         top,
@@ -587,17 +634,17 @@ export function TourGuide() {
                 className="fixed z-40 pointer-events-none transition-all duration-300 ease-out"
               />
 
-              {/* Indicador de clic directo sobre el elemento */}
+              {/* Indicador sobre el elemento destacado */}
               <div
                 style={{
-                  top: Math.max(8, targetRect.top - 24),
-                  left: Math.min(window.innerWidth - 110, Math.max(10, targetRect.left + targetRect.width / 2 - 50))
+                  top: targetRect.top < 30 ? targetRect.top + 16 : Math.max(8, targetRect.top - 24),
+                  left: Math.min(window.innerWidth - 120, Math.max(10, targetRect.left + targetRect.width / 2 - 50))
                 }}
                 className="fixed z-50 pointer-events-none flex flex-col items-center transition-all duration-300 ease-out"
               >
                 <div className="bg-primary text-black font-black text-[10px] tracking-tight px-3 py-0.5 rounded-full shadow-xl border border-primary/50 flex items-center gap-1.5 whitespace-nowrap">
                   <MousePointerClick size={12} className="text-black" />
-                  <span>Haz clic aquí</span>
+                  <span>{step.indicatorText || "Elemento destacado"}</span>
                 </div>
               </div>
             </>
