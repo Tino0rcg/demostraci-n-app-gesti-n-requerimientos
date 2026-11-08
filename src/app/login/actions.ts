@@ -38,10 +38,11 @@ export async function login(formData: FormData) {
       path: "/",
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7 // 7 días
     });
     revalidatePath("/", "layout");
-    redirect("/dashboard");
+    redirect("/dashboard?tour=true&step=1");
   }
 
   // 3. Fallback adicional si el usuario escribe admin o demo
@@ -50,10 +51,11 @@ export async function login(formData: FormData) {
       path: "/",
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7
     });
     revalidatePath("/", "layout");
-    redirect("/dashboard");
+    redirect("/dashboard?tour=true&step=1");
   }
 
   return { error: "El correo o la contraseña son incorrectos." };
@@ -66,10 +68,11 @@ export async function directDemoLogin(roleKey: string = "admin") {
     path: "/",
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
     maxAge: 60 * 60 * 24 * 7
   });
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  redirect("/dashboard?tour=true&step=1");
 }
 
 export async function signOut() {

@@ -182,6 +182,9 @@ export default function LoginPage() {
                                 <Sparkles className="w-3.5 h-3.5" />
                                 🚀 Acceso Directo de Demostración (1 Clic)
                             </button>
+                            <div className="text-[10px] text-zinc-500 font-mono text-center pt-1">
+                                Usuario: <span className="text-zinc-300">admin@vanguardia.cl</span> | Clave: <span className="text-zinc-300">Vanguardia_2025!</span>
+                            </div>
                         </div>
                     </CardFooter>
                 </form>
